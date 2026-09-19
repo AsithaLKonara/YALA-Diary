@@ -3,7 +3,6 @@ import TrustBar from "@/components/sections/TrustBar";
 import WhyYala from "@/components/sections/WhyYala";
 import SafariExperiences from "@/components/sections/SafariExperiences";
 import Wildlife from "@/components/sections/Wildlife";
-import BookingSection from "@/components/sections/BookingSection";
 import JourneyTimeline from "@/components/sections/JourneyTimeline";
 import WhyBookUs from "@/components/sections/WhyBookUs";
 import Gallery from "@/components/sections/Gallery";
@@ -22,7 +21,6 @@ export default function Home() {
       <WhyYala />
       <SafariExperiences />
       <Wildlife />
-      <BookingSection />
       <JourneyTimeline />
       <WhyBookUs />
       <Gallery />
