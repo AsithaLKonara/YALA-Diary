@@ -27,18 +27,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <header className="site-header">
           <div className="header-container">
             <div className="header-logo-group">
-              <Image src="/logo.png" alt="Yala Diary Logo" width={48} height={48} priority className="header-logo" />
-              <h1 className="header-title">YALA DIARY</h1>
+              <Image src="/logo.png" alt="Yala Diary Logo" width={100} height={40} priority className="header-logo-img" />
             </div>
             
             <nav className="main-nav">
-              <a href="#" className="nav-link">Home</a>
-              <a href="#" className="nav-link">Explore</a>
-              <a href="#" className="nav-link">Safaris</a>
-              <a href="#" className="nav-link">About</a>
+              <a href="#" className="nav-link">The Experience</a>
+              <a href="#" className="nav-link">Wildlife</a>
+              <a href="#" className="nav-link">Journal</a>
             </nav>
             
-            <button className="book-btn">Book Now</button>
+            <button className="nav-book-btn">Book Safari</button>
           </div>
         </header>
         <main className="main-content">
