@@ -11,10 +11,10 @@ export default function WhyYala() {
             Yala is where the dense jungle meets the wild ocean. It&apos;s a place of raw, untamed beauty, offering one of the highest leopard densities in the world. Experience a cinematic journey through Sri Lanka&apos;s most iconic wilderness.
           </p>
           <ul className="why-yala-list">
-            <li><span className="icon">🐆</span> Leopards</li>
-            <li><span className="icon">🐘</span> Elephants</li>
-            <li><span className="icon">🦚</span> Wildlife</li>
-            <li><span className="icon">🌊</span> Wild Coast</li>
+            <li>Leopards</li>
+            <li>Elephants</li>
+            <li>Wildlife</li>
+            <li>Wild Coast</li>
           </ul>
         </div>
         <div className="why-yala-image-container">
