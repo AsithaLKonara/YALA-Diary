@@ -156,3 +156,21 @@ a {
   display: flex;
   flex-direction: column;
 }
+
+/* Cursor Glow Effect */
+.cursor-glow {
+  position: fixed;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(17, 44, 25, 0.4) 0%, rgba(10, 17, 13, 0) 70%); /* Dark green gradient */
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cursor-glow.visible {
+  opacity: 1;
+}

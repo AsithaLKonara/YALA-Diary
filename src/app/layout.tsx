@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Geist, Geist_Mono } from "next/font/google";
+import CursorGlow from "@/components/CursorGlow";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,6 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
+        <CursorGlow />
         <header className="site-header">
           <div className="header-container">
             <div className="header-logo-group">
