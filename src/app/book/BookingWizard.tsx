@@ -1,22 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Calendar, MapPin, Users, ChevronDown, Check } from "lucide-react";
+import { Calendar, MapPin, Users, ChevronDown, Check, Loader2 } from "lucide-react";
 import { useCurrency } from "@/context/CurrencyContext";
+import { useSession } from "next-auth/react";
 
 interface Room {
-  id: number;
+  id: string;
   name: string;
-  price: number;
-  img: string;
-  features: string[];
+  pricePerNight: number;
+  maxCapacity: number;
+  availableRooms: number;
+  img?: string;
+  features?: string[];
 }
 
 interface Addon {
   id: string;
   name: string;
-  desc: string;
+  description: string;
   price: number;
 }
 
@@ -24,6 +27,7 @@ interface Guest {
   name: string;
   email: string;
   phone: string;
+  country: string;
   requests: string;
 }
 
@@ -39,17 +43,34 @@ interface BookingData {
 }
 
 export default function BookingWizard() {
+  const { data: session } = useSession();
   const [step, setStep] = useState(1);
   const [bookingData, setBookingData] = useState<BookingData>({
-    hotel: "Mahoora by Eco Team Yala",
-    checkIn: "2026-09-20",
-    checkOut: "2026-09-21",
+    hotel: "Yala Diary",
+    checkIn: new Date(Date.now() + 86400000).toISOString().split("T")[0],
+    checkOut: new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
     adults: 1,
     children: 0,
     room: null,
     addons: [],
-    guest: { name: "", email: "", phone: "", requests: "" }
+    guest: { name: "", email: "", phone: "", country: "", requests: "" }
   });
+
+  useEffect(() => {
+    if (session?.user) {
+      setBookingData(prev => ({
+        ...prev,
+        guest: {
+          ...prev.guest,
+          name: session.user?.name || "",
+          email: session.user?.email || "",
+        }
+      }));
+    }
+  }, [session]);
+
+  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
+  const [availableAddons, setAvailableAddons] = useState<Addon[]>([]);
 
   const updateData = (data: Partial<BookingData>) => {
     setBookingData(prev => ({ ...prev, ...data }));
@@ -58,44 +79,74 @@ export default function BookingWizard() {
   return (
     <div className="wizard-container">
       {/* Progress Bar */}
-      <div className="booking-progress">
-        {[
-          { num: 1, label: "Reservations" },
-          { num: 2, label: "Select Room" },
-          { num: 3, label: "Enhance Stay" },
-          { num: 4, label: "Checkout" }
-        ].map((s, idx) => (
-          <React.Fragment key={s.num}>
-            <div className={`step-indicator ${step === s.num ? "active" : ""} ${step > s.num ? "completed" : ""}`}>
-              <div className={`step-number ${step >= s.num ? "step-active-bg" : ""}`}>
-                {step > s.num ? <Check size={16} /> : s.num}
+      {step < 5 && (
+        <div className="booking-progress">
+          {[
+            { num: 1, label: "Reservations" },
+            { num: 2, label: "Select Room" },
+            { num: 3, label: "Enhance Stay" },
+            { num: 4, label: "Checkout" }
+          ].map((s, idx) => (
+            <React.Fragment key={s.num}>
+              <div className={`step-indicator ${step === s.num ? "active" : ""} ${step > s.num ? "completed" : ""}`}>
+                <div className={`step-number ${step >= s.num ? "step-active-bg" : ""}`}>
+                  {step > s.num ? <Check size={16} /> : s.num}
+                </div>
+                <span className="step-label">{s.label}</span>
               </div>
-              <span className="step-label">{s.label}</span>
-            </div>
-            {idx < 3 && <div className="step-connector" />}
-          </React.Fragment>
-        ))}
-      </div>
+              {idx < 3 && <div className="step-connector" />}
+            </React.Fragment>
+          ))}
+        </div>
+      )}
 
       {/* Steps Content */}
       <div className="wizard-content">
-        {step === 1 && <Step1 data={bookingData} updateData={updateData} next={() => setStep(2)} />}
-        {step === 2 && <Step2 data={bookingData} updateData={updateData} next={() => setStep(3)} back={() => setStep(1)} />}
-        {step === 3 && <Step3 data={bookingData} updateData={updateData} next={() => setStep(4)} back={() => setStep(2)} />}
-        {step === 4 && <Step4 data={bookingData} back={() => setStep(3)} />}
+        {step === 1 && <Step1 data={bookingData} updateData={updateData} next={() => setStep(2)} setAvailableRooms={setAvailableRooms} />}
+        {step === 2 && <Step2 data={bookingData} updateData={updateData} next={() => setStep(3)} back={() => setStep(1)} availableRooms={availableRooms} />}
+        {step === 3 && <Step3 data={bookingData} updateData={updateData} next={() => setStep(4)} back={() => setStep(2)} availableAddons={availableAddons} setAvailableAddons={setAvailableAddons} />}
+        {step === 4 && <Step4 data={bookingData} updateData={updateData} back={() => setStep(3)} next={() => setStep(5)} />}
+        {step === 5 && <Step5 />}
       </div>
     </div>
   );
 }
 
-interface StepProps {
-  data: BookingData;
-  updateData: (data: Partial<BookingData>) => void;
-  next: () => void;
-  back?: () => void;
-}
+// -----------------------------------------------------------------------------
+// STEP 1: Search Availability
+// -----------------------------------------------------------------------------
+function Step1({ data, updateData, next, setAvailableRooms }: any) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-function Step1({ data, updateData, next }: StepProps) {
+  const handleSearch = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/booking/availability?checkIn=${data.checkIn}&checkOut=${data.checkOut}&adults=${data.adults}&children=${data.children}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to fetch availability");
+      
+      // Inject some mock images/features based on name for now
+      const roomsWithAssets = json.available.map((r: any) => {
+        let img = "/images/assets/hero/pexels-gottapics-17892001.jpg";
+        if (r.name.toLowerCase().includes("tent")) img = "/images/assets/hero/2147a00f-f329-4e74-8661-98ef719e1f42.jpg";
+        return {
+          ...r,
+          img,
+          features: ["Queen Bed", "En-suite Bathroom", "Jungle View"]
+        };
+      });
+
+      setAvailableRooms(roomsWithAssets);
+      next();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="booking-panel">
       <h2 className="booking-title">Reservations</h2>
@@ -119,9 +170,9 @@ function Step1({ data, updateData, next }: StepProps) {
               onChange={(e) => updateData({ hotel: e.target.value })}
               style={{ appearance: 'none' }}
             >
-              <option>Mahoora by Eco Team Yala</option>
-              <option>Wild Coast Tented Lodge</option>
-              <option>Leopard Trails Yala</option>
+              <option value="Yala Diary">Yala Diary</option>
+              <option value="Mahoora by Eco Team Yala">Mahoora by Eco Team Yala</option>
+              <option value="Wild Coast Tented Lodge">Wild Coast Tented Lodge</option>
             </select>
           </div>
         </div>
@@ -155,7 +206,7 @@ function Step1({ data, updateData, next }: StepProps) {
 
       <div className="room-box">
         <div className="room-box-header">
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Room 1</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Room Requirements</h3>
           <Users size={20} color="var(--primary)" />
         </div>
         <div className="form-grid">
@@ -180,36 +231,25 @@ function Step1({ data, updateData, next }: StepProps) {
             />
           </div>
         </div>
-        {data.children > 0 && (
-          <div className="form-group" style={{ marginTop: 20 }}>
-            <label className="form-label">Child 1 Age</label>
-            <select className="form-input">
-              {[...Array(12)].map((_, i) => <option key={i}>{i} years</option>)}
-            </select>
-          </div>
-        )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 20 }}>
-        <button className="btn-secondary" style={{ padding: '12px 24px', fontSize: '0.875rem' }}>+ Add Another Room</button>
-        <div className="form-group" style={{ flex: '1', maxWidth: 300 }}>
-          <input type="text" className="form-input" placeholder="Promo Code" />
-        </div>
-      </div>
+      {error && <div style={{ color: "var(--dash-danger)", marginTop: 10 }}>{error}</div>}
 
       <div className="booking-actions" style={{ justifyContent: 'flex-end' }}>
-        <button className="btn-primary" onClick={next}>Check Availability →</button>
+        <button className="btn-primary" onClick={handleSearch} disabled={loading} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {loading && <Loader2 size={16} className="spinner" />}
+          Check Availability →
+        </button>
       </div>
     </div>
   );
 }
 
-function Step2({ updateData, next, back }: StepProps) {
+// -----------------------------------------------------------------------------
+// STEP 2: Select Room
+// -----------------------------------------------------------------------------
+function Step2({ updateData, next, back, availableRooms }: any) {
   const { formatPrice } = useCurrency();
-  const rooms: Room[] = [
-    { id: 1, name: "Luxury Explorer Tent", price: 350, img: "/images/assets/hero/2147a00f-f329-4e74-8661-98ef719e1f42.jpg", features: ["Queen Bed", "En-suite Bathroom", "Jungle View"] },
-    { id: 2, name: "Family Safari Suite", price: 550, img: "/images/assets/hero/pexels-gottapics-17892001.jpg", features: ["2 Bedrooms", "Private Deck", "Outdoor Shower"] },
-  ];
 
   const handleSelect = (r: Room) => {
     updateData({ room: r });
@@ -218,24 +258,34 @@ function Step2({ updateData, next, back }: StepProps) {
 
   return (
     <div className="booking-panel">
-      <h2 className="booking-title">Select Your Tent</h2>
-      <div className="room-grid">
-        {rooms.map(r => (
-          <div key={r.id} className="room-card">
-            <div className="room-img-wrap">
-              <Image src={r.img} alt={r.name} fill style={{ objectFit: 'cover' }} />
-            </div>
-            <div className="room-info">
-              <h3 style={{ fontSize: '1.5rem', marginBottom: 10 }}>{r.name}</h3>
-              <div className="room-features">
-                {r.features.map((f, i) => <span key={i} className="room-feature"><Check size={14} color="var(--primary)"/> {f}</span>)}
+      <h2 className="booking-title">Select Your Accommodation</h2>
+      {availableRooms.length === 0 ? (
+        <div style={{ padding: 40, textAlign: "center", background: "rgba(255,255,255,0.05)", borderRadius: 12 }}>
+          <p>No rooms available for these dates and guest counts.</p>
+          <button className="btn-secondary" onClick={back} style={{ marginTop: 20 }}>Change Dates</button>
+        </div>
+      ) : (
+        <div className="room-grid">
+          {availableRooms.map((r: any) => (
+            <div key={r.id} className="room-card">
+              <div className="room-img-wrap">
+                <Image src={r.img} alt={r.name} fill style={{ objectFit: 'cover' }} />
               </div>
-              <div className="room-price">{formatPrice(r.price)} <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>/ night</span></div>
-              <button className="btn-primary" style={{ width: '100%' }} onClick={() => handleSelect(r)}>Select Room</button>
+              <div className="room-info">
+                <h3 style={{ fontSize: '1.5rem', marginBottom: 10 }}>{r.name}</h3>
+                <div className="room-features">
+                  {r.features.map((f: string, i: number) => <span key={i} className="room-feature"><Check size={14} color="var(--primary)"/> {f}</span>)}
+                </div>
+                <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', marginTop: 10 }}>
+                  {r.availableRooms} rooms left
+                </div>
+                <div className="room-price">{formatPrice(r.pricePerNight)} <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>/ night</span></div>
+                <button className="btn-primary" style={{ width: '100%' }} onClick={() => handleSelect(r)}>Select Room</button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       <div className="booking-actions" style={{ justifyContent: 'flex-start' }}>
         <button className="btn-secondary" onClick={back}>← Back</button>
       </div>
@@ -243,18 +293,29 @@ function Step2({ updateData, next, back }: StepProps) {
   );
 }
 
-function Step3({ data, updateData, next, back }: StepProps) {
+// -----------------------------------------------------------------------------
+// STEP 3: Addons
+// -----------------------------------------------------------------------------
+function Step3({ data, updateData, next, back, availableAddons, setAvailableAddons }: any) {
   const { formatPrice } = useCurrency();
-  const addonsList: Addon[] = [
-    { id: "safari", name: "Extra Full-Day Safari Drive", desc: "Private jeep with expert naturalist guide", price: 150 },
-    { id: "lunch", name: "Bush Lunch Experience", desc: "Five-course meal served in the wilderness", price: 80 },
-    { id: "transfer", name: "Airport Transfer (CMB)", desc: "Luxury SUV pickup from Colombo Airport", price: 200 },
-  ];
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (availableAddons.length === 0) {
+      setLoading(true);
+      fetch("/api/booking/addons")
+        .then(res => res.json())
+        .then(json => {
+          if (json.addons) setAvailableAddons(json.addons);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [availableAddons, setAvailableAddons]);
 
   const toggleAddon = (addon: Addon) => {
-    const exists = data.addons.find((a) => a.id === addon.id);
+    const exists = data.addons.find((a: any) => a.id === addon.id);
     if (exists) {
-      updateData({ addons: data.addons.filter((a) => a.id !== addon.id) });
+      updateData({ addons: data.addons.filter((a: any) => a.id !== addon.id) });
     } else {
       updateData({ addons: [...data.addons, addon] });
     }
@@ -265,25 +326,29 @@ function Step3({ data, updateData, next, back }: StepProps) {
       <h2 className="booking-title">Enhance Your Stay</h2>
       <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 30 }}>Add personalized services to make your safari unforgettable.</p>
       
-      <div className="addon-list">
-        {addonsList.map(a => {
-          const isSelected = data.addons.find((ad) => ad.id === a.id);
-          return (
-            <div key={a.id} className={`addon-card ${isSelected ? 'selected' : ''}`} onClick={() => toggleAddon(a)}>
-              <div className="addon-info">
-                <h4>{a.name}</h4>
-                <p>{a.desc}</p>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                <span className="addon-price">+{formatPrice(a.price)}</span>
-                <div style={{ width: 24, height: 24, border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isSelected ? 'var(--primary)' : 'transparent' }}>
-                  {isSelected && <Check size={16} color="#000" />}
+      {loading ? (
+        <div style={{ textAlign: "center", padding: 40 }}><Loader2 className="spinner" size={32} /></div>
+      ) : (
+        <div className="addon-list">
+          {availableAddons.map((a: any) => {
+            const isSelected = data.addons.find((ad: any) => ad.id === a.id);
+            return (
+              <div key={a.id} className={`addon-card ${isSelected ? 'selected' : ''}`} onClick={() => toggleAddon(a)}>
+                <div className="addon-info">
+                  <h4>{a.name}</h4>
+                  <p>{a.description}</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
+                  <span className="addon-price">+{formatPrice(a.price)}</span>
+                  <div style={{ width: 24, height: 24, border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isSelected ? 'var(--primary)' : 'transparent' }}>
+                    {isSelected && <Check size={16} color="#000" />}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="booking-actions">
         <button className="btn-secondary" onClick={back}>← Back</button>
@@ -295,11 +360,62 @@ function Step3({ data, updateData, next, back }: StepProps) {
   );
 }
 
-function Step4({ data, back }: { data: BookingData, back: () => void }) {
+// -----------------------------------------------------------------------------
+// STEP 4: Checkout
+// -----------------------------------------------------------------------------
+function Step4({ data, updateData, back, next }: any) {
   const { formatPrice } = useCurrency();
-  const roomPrice = data.room ? data.room.price : 0;
-  const addonsTotal = data.addons.reduce((sum, a) => sum + a.price, 0);
-  const total = roomPrice + addonsTotal;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { data: session } = useSession();
+
+  const checkInDate = new Date(data.checkIn);
+  const checkOutDate = new Date(data.checkOut);
+  const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)));
+  
+  const roomPriceTotal = (data.room ? data.room.pricePerNight : 0) * nights;
+  const addonsTotal = data.addons.reduce((sum: number, a: any) => sum + a.price, 0);
+  const total = roomPriceTotal + addonsTotal;
+
+  const handleSubmit = async () => {
+    if (!data.guest.name || !data.guest.email) {
+      setError("Please fill in your name and email.");
+      return;
+    }
+    setLoading(true);
+    setError("");
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const userId = (session?.user as any)?.id || null;
+      
+      const payload = {
+        hotel: data.hotel,
+        checkIn: data.checkIn,
+        checkOut: data.checkOut,
+        adults: data.adults,
+        children: data.children,
+        roomTypeId: data.room.id,
+        addons: data.addons.map((a: any) => a.id),
+        guest: data.guest,
+        userId
+      };
+
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to create booking");
+
+      next(); // Go to success page
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="checkout-grid">
@@ -308,37 +424,62 @@ function Step4({ data, back }: { data: BookingData, back: () => void }) {
         
         <div className="form-grid">
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-            <label className="form-label">Full Name</label>
-            <input type="text" className="form-input" placeholder="e.g. David Attenborough" />
+            <label className="form-label">Full Name *</label>
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="e.g. David Attenborough" 
+              value={data.guest.name}
+              onChange={(e) => updateData({ guest: { ...data.guest, name: e.target.value } })}
+            />
           </div>
           <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <input type="email" className="form-input" placeholder="david@example.com" />
+            <label className="form-label">Email Address *</label>
+            <input 
+              type="email" 
+              className="form-input" 
+              placeholder="david@example.com" 
+              value={data.guest.email}
+              onChange={(e) => updateData({ guest: { ...data.guest, email: e.target.value } })}
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Phone Number</label>
-            <div style={{ display: 'flex' }}>
-              <select className="form-input" style={{ width: '100px', borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: 0 }}>
-                <option>+1</option>
-                <option>+44</option>
-                <option>+61</option>
-              </select>
-              <input type="tel" className="form-input" style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }} placeholder="000 000 0000" />
-            </div>
+            <input 
+              type="tel" 
+              className="form-input" 
+              placeholder="+1 000 000 0000" 
+              value={data.guest.phone}
+              onChange={(e) => updateData({ guest: { ...data.guest, phone: e.target.value } })}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Country</label>
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="e.g. United Kingdom" 
+              value={data.guest.country}
+              onChange={(e) => updateData({ guest: { ...data.guest, country: e.target.value } })}
+            />
           </div>
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Special Requests</label>
-            <textarea className="form-input" rows={4} placeholder="Dietary requirements, celebrations..." style={{ resize: 'vertical' }}></textarea>
+            <textarea 
+              className="form-input" 
+              rows={4} 
+              placeholder="Dietary requirements, celebrations..." 
+              style={{ resize: 'vertical' }}
+              value={data.guest.requests}
+              onChange={(e) => updateData({ guest: { ...data.guest, requests: e.target.value } })}
+            ></textarea>
           </div>
         </div>
 
-        <div style={{ marginTop: 30, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <input type="checkbox" id="terms" style={{ width: 18, height: 18, accentColor: 'var(--primary)' }} />
-          <label htmlFor="terms" style={{ color: 'rgba(255,255,255,0.7)' }}>I accept the <a href="#" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Terms & Conditions</a></label>
-        </div>
+        {error && <div style={{ color: "var(--dash-danger)", marginTop: 20 }}>{error}</div>}
 
         <div className="booking-actions">
-          <button className="btn-secondary" onClick={back}>← Back</button>
+          <button className="btn-secondary" onClick={back} disabled={loading}>← Back</button>
         </div>
       </div>
 
@@ -354,6 +495,10 @@ function Step4({ data, back }: { data: BookingData, back: () => void }) {
           <span style={{ color: '#fff' }}>{data.checkOut}</span>
         </div>
         <div className="summary-row">
+          <span>Nights</span>
+          <span style={{ color: '#fff' }}>{nights}</span>
+        </div>
+        <div className="summary-row">
           <span>Guests</span>
           <span style={{ color: '#fff' }}>{data.adults} Adults, {data.children} Child</span>
         </div>
@@ -362,10 +507,10 @@ function Step4({ data, back }: { data: BookingData, back: () => void }) {
         
         <div className="summary-row">
           <span style={{ color: '#fff', fontWeight: 600 }}>{data.room?.name || "Tent"}</span>
-          <span style={{ color: '#fff' }}>{formatPrice(roomPrice)}</span>
+          <span style={{ color: '#fff' }}>{formatPrice(roomPriceTotal)}</span>
         </div>
 
-        {data.addons.map((a) => (
+        {data.addons.map((a: any) => (
           <div className="summary-row" key={a.id} style={{ fontSize: '0.875rem' }}>
             <span>{a.name}</span>
             <span>{formatPrice(a.price)}</span>
@@ -377,8 +522,34 @@ function Step4({ data, back }: { data: BookingData, back: () => void }) {
           <span>{formatPrice(total)}</span>
         </div>
 
-        <button className="btn-primary" style={{ width: '100%', marginTop: 30, padding: '20px', fontSize: '1.125rem' }}>Complete Booking</button>
+        <button 
+          className="btn-primary" 
+          style={{ width: '100%', marginTop: 30, padding: '20px', fontSize: '1.125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+          onClick={handleSubmit}
+          disabled={loading}
+        >
+          {loading && <Loader2 size={18} className="spinner" />}
+          Complete Booking
+        </button>
       </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// STEP 5: Success
+// -----------------------------------------------------------------------------
+function Step5() {
+  return (
+    <div className="booking-panel" style={{ textAlign: 'center', padding: '60px 20px' }}>
+      <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(154, 205, 50, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+        <Check size={40} color="var(--primary)" />
+      </div>
+      <h2 className="booking-title" style={{ fontSize: '2.5rem', marginBottom: 15 }}>Booking Confirmed!</h2>
+      <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.125rem', maxWidth: 500, margin: '0 auto 30px' }}>
+        Thank you for choosing Yala Diary. We have received your reservation and will send a confirmation email shortly.
+      </p>
+      <button className="btn-primary" onClick={() => window.location.href = '/'}>Return to Home</button>
     </div>
   );
 }

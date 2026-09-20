@@ -77,6 +77,7 @@ model RoomType {
   maxCapacity    Int
   pricePerNight  Float
   rooms          Room[]
+  bookings       Booking[]
   createdAt      DateTime @default(now())
 }
 
@@ -111,8 +112,13 @@ model Booking {
   guestPhone      String
   guestCountry    String
 
-  room            Room          @relation(fields: [roomId], references: [id])
-  roomId          String
+  hotel           String        @default("Yala Diary")
+
+  roomType        RoomType      @relation(fields: [roomTypeId], references: [id])
+  roomTypeId      String
+
+  room            Room?         @relation(fields: [roomId], references: [id])
+  roomId          String?
 
   checkIn         DateTime
   checkOut        DateTime
@@ -121,6 +127,7 @@ model Booking {
   children        Int           @default(0)
 
   status          BookingStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(UNPAID)
 
   // Financials
   roomRevenue     Float
@@ -144,6 +151,13 @@ enum BookingStatus {
   CHECKED_IN
   CHECKED_OUT
   CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  REFUNDED
 }
 
 model AddOnService {
