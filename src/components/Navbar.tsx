@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useCurrency, CurrencyCode } from "@/context/CurrencyContext";
 import { useSession, signOut } from "next-auth/react";
 
@@ -10,9 +11,15 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { currency, setCurrency } = useCurrency();
   const { data: session } = useSession();
+  const pathname = usePathname();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const role = (session?.user as any)?.role;
+
+  // Hide navbar completely on admin routes
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
