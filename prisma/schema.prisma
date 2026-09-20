@@ -217,13 +217,31 @@ model SafariBooking {
 // ─── Settings / Configuration ─────────────────────────────────────────────
 
 model HotelProfile {
-  id           String   @id @default(cuid())
-  hotelName    String   @default("Yala Diary")
-  address      String
-  phone        String
-  email        String
-  website      String
-  checkInTime  String   @default("14:00")
-  checkOutTime String   @default("11:00")
-  updatedAt    DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  hotelName          String   @default("Yala Diary")
+  address            String
+  phone              String
+  email              String
+  website            String
+  checkInTime        String   @default("14:00")
+  checkOutTime       String   @default("11:00")
+  
+  // Notification Preferences
+  notifyNewBooking   Boolean  @default(true)
+  notifyCancellation Boolean  @default(true)
+  notifyCheckIn      Boolean  @default(true)
+  notifyPayment      Boolean  @default(true)
+
+  updatedAt          DateTime @updatedAt
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }

@@ -25,6 +25,10 @@ export async function GET() {
         website: "https://yaladiary.com",
         checkInTime: "14:00",
         checkOutTime: "11:00",
+        notifyNewBooking: true,
+        notifyCancellation: true,
+        notifyCheckIn: true,
+        notifyPayment: true,
         updatedAt: new Date()
       };
     }
@@ -68,6 +72,10 @@ export async function PUT(req: Request) {
           website: data.website,
           checkInTime: data.checkInTime,
           checkOutTime: data.checkOutTime,
+          notifyNewBooking: data.notifyNewBooking,
+          notifyCancellation: data.notifyCancellation,
+          notifyCheckIn: data.notifyCheckIn,
+          notifyPayment: data.notifyPayment,
         }
       });
     } else {
@@ -80,6 +88,10 @@ export async function PUT(req: Request) {
           website: data.website,
           checkInTime: data.checkInTime,
           checkOutTime: data.checkOutTime,
+          notifyNewBooking: data.notifyNewBooking,
+          notifyCancellation: data.notifyCancellation,
+          notifyCheckIn: data.notifyCheckIn,
+          notifyPayment: data.notifyPayment,
         }
       });
     }

@@ -29,6 +29,11 @@ export default function SettingsPage() {
   const [website, setWebsite] = useState("");
   const [checkInTime, setCheckInTime] = useState("");
   const [checkOutTime, setCheckOutTime] = useState("");
+  const [notifyNewBooking, setNotifyNewBooking] = useState(true);
+  const [notifyCancellation, setNotifyCancellation] = useState(true);
+  const [notifyCheckIn, setNotifyCheckIn] = useState(true);
+  const [notifyPayment, setNotifyPayment] = useState(true);
+  
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -59,6 +64,10 @@ export default function SettingsPage() {
         setWebsite(data.profile.website || "");
         setCheckInTime(data.profile.checkInTime || "");
         setCheckOutTime(data.profile.checkOutTime || "");
+        setNotifyNewBooking(data.profile.notifyNewBooking ?? true);
+        setNotifyCancellation(data.profile.notifyCancellation ?? true);
+        setNotifyCheckIn(data.profile.notifyCheckIn ?? true);
+        setNotifyPayment(data.profile.notifyPayment ?? true);
       }
     } catch (err) {
       console.error(err);
@@ -89,7 +98,10 @@ export default function SettingsPage() {
       const res = await fetch("/api/admin/settings/hotel", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ hotelName, address, phone, email, website, checkInTime, checkOutTime })
+        body: JSON.stringify({ 
+          hotelName, address, phone, email, website, checkInTime, checkOutTime,
+          notifyNewBooking, notifyCancellation, notifyCheckIn, notifyPayment
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to update profile");
@@ -313,17 +325,17 @@ export default function SettingsPage() {
           <div className="detail-card-header"><span className="detail-card-title">Notification Preferences</span></div>
           <div className="detail-card-body">
             {[
-              { label: "New Booking Email", desc: "Get notified when a new booking is created" },
-              { label: "Booking Cancellation", desc: "Alert when a guest cancels a booking" },
-              { label: "Check-in Reminder", desc: "Reminder 24 hours before guest arrival" },
-              { label: "Payment Received", desc: "Confirmation when payment is processed" },
+              { label: "New Booking Notification", desc: "Get notified when a new booking is created", state: notifyNewBooking, setter: setNotifyNewBooking },
+              { label: "Booking Cancellation", desc: "Alert when a guest cancels a booking", state: notifyCancellation, setter: setNotifyCancellation },
+              { label: "Check-in Reminder", desc: "Reminder 24 hours before guest arrival", state: notifyCheckIn, setter: setNotifyCheckIn },
+              { label: "Payment Received", desc: "Confirmation when payment is processed", state: notifyPayment, setter: setNotifyPayment },
             ].map((pref, i) => (
               <div key={i} className="detail-row" style={{ alignItems: "flex-start", paddingTop: 12, paddingBottom: 12 }}>
                 <div>
                   <div style={{ fontSize: "0.875rem", color: "var(--dash-text)", fontWeight: 500 }}>{pref.label}</div>
                   <div style={{ fontSize: "0.8rem", color: "var(--dash-muted)" }}>{pref.desc}</div>
                 </div>
-                <ToggleSwitch defaultChecked={i < 3} />
+                <ToggleSwitch checked={pref.state} onChange={pref.setter} />
               </div>
             ))}
           </div>
@@ -342,17 +354,16 @@ export default function SettingsPage() {
   );
 }
 
-function ToggleSwitch({ defaultChecked }: { defaultChecked?: boolean }) {
-  const [on, setOn] = useState(defaultChecked ?? false);
+function ToggleSwitch({ checked, onChange }: { checked: boolean, onChange: (val: boolean) => void }) {
   return (
     <button
-      onClick={() => setOn(!on)}
-      aria-pressed={on}
+      onClick={(e) => { e.preventDefault(); onChange(!checked); }}
+      aria-pressed={checked}
       style={{
         width: 40,
         height: 22,
         borderRadius: 11,
-        background: on ? "var(--dash-accent)" : "var(--dash-surface-2)",
+        background: checked ? "var(--dash-accent)" : "var(--dash-surface-2)",
         border: "1px solid var(--dash-border)",
         cursor: "pointer",
         position: "relative",
@@ -363,11 +374,11 @@ function ToggleSwitch({ defaultChecked }: { defaultChecked?: boolean }) {
       <span style={{
         position: "absolute",
         top: 2,
-        left: on ? 20 : 2,
+        left: checked ? 20 : 2,
         width: 16,
         height: 16,
         borderRadius: "50%",
-        background: on ? "#0a110d" : "rgba(255,255,255,0.4)",
+        background: checked ? "#0a110d" : "rgba(255,255,255,0.4)",
         transition: "left 0.2s",
       }} />
     </button>
