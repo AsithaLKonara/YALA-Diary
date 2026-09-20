@@ -6,7 +6,7 @@ import { getToken } from "next-auth/jwt";
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/guest")) {
     const token = await getToken({
       req,
       secret: process.env.NEXTAUTH_SECRET,
@@ -19,10 +19,20 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(signInUrl);
     }
 
-    // Check role from JWT token (role is embedded during jwt() callback in auth.ts)
     const role = token.role as string | undefined;
-    if (role !== "ADMIN" && role !== "STAFF") {
-      return NextResponse.redirect(new URL("/", req.url));
+
+    // Admin/Staff routes protection
+    if (pathname.startsWith("/admin")) {
+      if (role !== "ADMIN" && role !== "STAFF") {
+        return NextResponse.redirect(new URL("/guest/dashboard", req.url));
+      }
+    }
+
+    // Guest routes protection
+    if (pathname.startsWith("/guest")) {
+      if (role === "ADMIN" || role === "STAFF") {
+        return NextResponse.redirect(new URL("/admin/dashboard", req.url));
+      }
     }
   }
 
@@ -30,5 +40,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/guest/:path*"],
 };

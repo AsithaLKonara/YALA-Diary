@@ -16,8 +16,8 @@ export default function Navbar() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const role = (session?.user as any)?.role;
 
-  // Hide navbar completely on admin routes
-  if (pathname?.startsWith("/admin")) {
+  // Hide navbar completely on admin and guest routes
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/guest")) {
     return null;
   }
 

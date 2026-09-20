@@ -23,7 +23,7 @@ const GoogleIcon = () => (
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams?.get("callbackUrl") || "/";
+  const callbackUrl = searchParams?.get("callbackUrl") || "/guest/dashboard";
   const urlError = searchParams?.get("error");
 
   const [mode, setMode] = useState<AuthMode>("login");
