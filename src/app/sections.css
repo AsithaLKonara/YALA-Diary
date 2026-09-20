@@ -752,3 +752,73 @@
     text-align: center;
   }
 }
+
+/* =========================================
+   Mobile Global Adjustments (E2E)
+========================================= */
+@media (max-width: 768px) {
+  .section-title {
+    font-size: clamp(2rem, 8vw, 3rem);
+    margin-bottom: 1.5rem;
+  }
+  .section-padding {
+    padding: 60px 15px;
+  }
+  
+  /* Stack Trust Bar */
+  .trust-container {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .trust-divider {
+    width: 50%;
+    height: 1px;
+    margin: 10px auto;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .trust-bar {
+    padding: 40px 20px;
+  }
+
+  /* Stack all grids to 1 column */
+  .why-yala-grid,
+  .experiences-grid,
+  .wildlife-grid,
+  .why-book-grid,
+  .gallery-masonry,
+  .reviews-grid,
+  .footer-container {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+  }
+  
+  /* Reset specific layouts */
+  .why-yala-image {
+    min-height: 300px;
+  }
+  .wildlife-card {
+    height: 350px;
+  }
+  .final-content {
+    padding: 0 20px;
+  }
+  .final-title {
+    font-size: clamp(2.5rem, 10vw, 5rem);
+  }
+  
+  /* Timeline adjustments */
+  .timeline-content {
+    width: 100%;
+    padding: 0 0 0 30px;
+  }
+  .timeline-item:nth-child(even) .timeline-content {
+    left: 0;
+    text-align: left;
+  }
+  .timeline-marker {
+    left: 0;
+  }
+  .timeline-container::before {
+    left: 0;
+  }
+}

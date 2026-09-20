@@ -59,8 +59,8 @@
 
 .hero-headline {
   font-family: 'Inter', sans-serif;
-  font-weight: 900;
-  font-size: clamp(4rem, 7vw, 7rem);
+  font-weight: 800;
+  font-size: clamp(2.5rem, 10vw, 7rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
   color: #FFFFFF;
@@ -197,5 +197,26 @@
 
   .hero-controls {
     right: 30px;
+}
+
+@media (max-width: 768px) {
+  .hero-content {
+    padding: 0 20px;
+    padding-bottom: 80px;
+  }
+  
+  .hero-ctas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .glass-btn, .glass-btn-outline {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+  
+  .hero-controls {
+    display: none;
   }
 }
