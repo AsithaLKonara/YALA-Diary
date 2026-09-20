@@ -3,8 +3,17 @@ import Image from "next/image";
 
 export default function Footer() {
   return (
-    <footer className="site-footer">
-      <div className="footer-container">
+    <footer className="site-footer" style={{ position: 'relative', overflow: 'hidden' }}>
+      <Image 
+        src="/images/assets/leapords/3.jpg" 
+        alt="Footer Background" 
+        fill 
+        sizes="100vw"
+        style={{ objectFit: 'cover', zIndex: 0 }} 
+      />
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1 }} />
+      <div style={{ position: 'relative', zIndex: 2 }}>
+        <div className="footer-container">
         <div className="footer-brand">
           <Image src="/logo.png" alt="Yala Diary Logo" width={120} height={60} className="footer-logo-img" />
           <p className="footer-brand-desc">Wild Sri Lanka, Unfiltered. Experience the apex predators in their natural habitat.</p>
@@ -41,6 +50,7 @@ export default function Footer() {
           <a href="#">Privacy Policy</a>
           <a href="#">Terms of Service</a>
         </div>
+      </div>
       </div>
     </footer>
   );

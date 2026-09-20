@@ -28,7 +28,7 @@
 .trust-bar {
   background: var(--background);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 30px 120px;
+  padding: 75px 120px;
 }
 
 .trust-container {
@@ -634,7 +634,6 @@
    14 - Footer
 ========================================= */
 .site-footer {
-  background: #000;
   padding: 80px 120px 40px;
 }
 
