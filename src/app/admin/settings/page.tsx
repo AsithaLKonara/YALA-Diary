@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import AdminTopbar from "@/components/admin/Topbar";
 import { Loader2 } from "lucide-react";
+import AddonPanel from "@/components/admin/AddonPanel";
 
 const ROOM_TYPES = [
   { id: "rt1", name: "Deluxe Tent", capacity: 2, price: 495, rooms: 5 },
@@ -11,16 +12,16 @@ const ROOM_TYPES = [
   { id: "rt4", name: "Luxury Villa", capacity: 6, price: 1200, rooms: 1 },
 ];
 
-const ADD_ONS = [
-  { id: "a1", name: "AM Safari", category: "Safari", price: 85, active: true },
-  { id: "a2", name: "PM Safari", category: "Safari", price: 85, active: true },
-  { id: "a3", name: "Full Board", category: "Food", price: 120, active: true },
-  { id: "a4", name: "Dinner Package", category: "Food", price: 65, active: true },
-  { id: "a5", name: "Spa Treatment", category: "Spa", price: 110, active: false },
-  { id: "a6", name: "Airport Transfer", category: "Transport", price: 75, active: true },
-];
+const CATEGORY_LABELS: Record<string, string> = {
+  SAFARI: "Safari",
+  FOOD: "Food & Beverage",
+  SPA: "Spa & Wellness",
+  TRANSPORT: "Transport",
+  OTHER: "Other",
+};
 
 export default function SettingsPage() {
+  // Hotel Profile State
   const [hotelName, setHotelName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
@@ -28,14 +29,21 @@ export default function SettingsPage() {
   const [website, setWebsite] = useState("");
   const [checkInTime, setCheckInTime] = useState("");
   const [checkOutTime, setCheckOutTime] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [error, setError] = useState("");
+  const [profileError, setProfileError] = useState("");
+
+  // Add-on Services State
+  const [addons, setAddons] = useState<any[]>([]);
+  const [addonsLoading, setAddonsLoading] = useState(true);
+  const [togglingAddonId, setTogglingAddonId] = useState<string | null>(null);
+  const [addonPanelOpen, setAddonPanelOpen] = useState(false);
+  const [editingAddon, setEditingAddon] = useState<any | null>(null);
 
   useEffect(() => {
     fetchProfile();
+    fetchAddons();
   }, []);
 
   const fetchProfile = async () => {
@@ -54,42 +62,79 @@ export default function SettingsPage() {
       }
     } catch (err) {
       console.error(err);
-      setError("Failed to load hotel profile");
+      setProfileError("Failed to load hotel profile");
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchAddons = async () => {
+    setAddonsLoading(true);
+    try {
+      const res = await fetch("/api/admin/settings/addons");
+      const data = await res.json();
+      if (data.addons) setAddons(data.addons);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setAddonsLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
-    setError("");
+    setProfileError("");
     setSaveSuccess(false);
-
     try {
       const res = await fetch("/api/admin/settings/hotel", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          hotelName,
-          address,
-          phone,
-          email,
-          website,
-          checkInTime,
-          checkOutTime
-        })
+        body: JSON.stringify({ hotelName, address, phone, email, website, checkInTime, checkOutTime })
       });
-      
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to update profile");
-      
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err: any) {
-      setError(err.message);
+      setProfileError(err.message);
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleToggleAddon = async (addon: any) => {
+    setTogglingAddonId(addon.id);
+    try {
+      const res = await fetch(`/api/admin/settings/addons/${addon.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: !addon.active })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update addon");
+      // Optimistic UI update
+      setAddons(prev => prev.map(a => a.id === addon.id ? { ...a, active: !a.active } : a));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTogglingAddonId(null);
+    }
+  };
+
+  const openCreatePanel = () => {
+    setEditingAddon(null);
+    setAddonPanelOpen(true);
+  };
+
+  const openEditPanel = (addon: any) => {
+    setEditingAddon(addon);
+    setAddonPanelOpen(true);
+  };
+
+  const handleAddonSuccess = () => {
+    setAddonPanelOpen(false);
+    setEditingAddon(null);
+    fetchAddons();
   };
 
   return (
@@ -101,9 +146,9 @@ export default function SettingsPage() {
             <h1>Settings</h1>
             <p>Manage hotel profile, room types, and services</p>
           </div>
-          <button 
-            className="btn-primary" 
-            onClick={handleSave} 
+          <button
+            className="btn-primary"
+            onClick={handleSave}
             disabled={saving || loading}
             style={{ display: "flex", alignItems: "center", gap: 8 }}
           >
@@ -112,7 +157,7 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        {error && <div style={{ color: "var(--dash-danger)", marginBottom: 20 }}>{error}</div>}
+        {profileError && <div style={{ color: "var(--dash-danger)", marginBottom: 20 }}>{profileError}</div>}
 
         {/* Hotel Profile */}
         <div className="detail-card settings-section">
@@ -121,7 +166,9 @@ export default function SettingsPage() {
           </div>
           <div className="detail-card-body">
             {loading ? (
-               <div style={{ textAlign: "center", padding: 40 }}><Loader2 className="spinner" style={{ color: "var(--primary)" }} /></div>
+              <div style={{ textAlign: "center", padding: 40 }}>
+                <Loader2 className="spinner" style={{ color: "var(--primary)" }} />
+              </div>
             ) : (
               <div className="settings-form-grid">
                 <div className="form-group">
@@ -192,7 +239,12 @@ export default function SettingsPage() {
 
         {/* Add-on Services */}
         <div className="settings-section">
-          <div className="settings-section-title">Add-on Services</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div className="settings-section-title" style={{ marginBottom: 0 }}>Add-on Services</div>
+            <button className="btn-primary" style={{ fontSize: "0.8rem", padding: "6px 16px" }} onClick={openCreatePanel}>
+              + Add Service
+            </button>
+          </div>
           <div className="admin-table-wrapper">
             <table className="admin-table">
               <thead>
@@ -205,26 +257,52 @@ export default function SettingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {ADD_ONS.map((addon) => (
-                  <tr key={addon.id}>
-                    <td style={{ fontWeight: 500 }}>{addon.name}</td>
-                    <td className="muted">{addon.category}</td>
-                    <td style={{ fontWeight: 600 }}>${addon.price}</td>
-                    <td>
-                      <span className={`status-badge ${addon.active ? "confirmed" : "checked_out"}`}>
-                        {addon.active ? "Active" : "Inactive"}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="row-actions">
-                        <button className="row-action-btn">Edit</button>
-                        <button className="row-action-btn" style={{ color: "var(--dash-danger)" }}>
-                          {addon.active ? "Deactivate" : "Activate"}
-                        </button>
-                      </div>
+                {addonsLoading ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: 30 }}>
+                      <Loader2 size={20} className="spinner" style={{ margin: "0 auto", color: "var(--primary)" }} />
                     </td>
                   </tr>
-                ))}
+                ) : addons.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", padding: 30, color: "var(--dash-muted)" }}>
+                      No Add-on Services found. Click "+ Add Service" to create one.
+                    </td>
+                  </tr>
+                ) : (
+                  addons.map((addon) => (
+                    <tr key={addon.id}>
+                      <td>
+                        <div style={{ fontWeight: 500 }}>{addon.name}</div>
+                        {addon.description && (
+                          <div style={{ fontSize: "0.75rem", color: "var(--dash-muted)", marginTop: 2 }}>{addon.description}</div>
+                        )}
+                      </td>
+                      <td className="muted">{CATEGORY_LABELS[addon.category] || addon.category}</td>
+                      <td style={{ fontWeight: 600 }}>${addon.price.toFixed(2)}</td>
+                      <td>
+                        <span className={`status-badge ${addon.active ? "confirmed" : "checked_out"}`}>
+                          {addon.active ? "Active" : "Inactive"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="row-actions">
+                          <button className="row-action-btn" onClick={() => openEditPanel(addon)}>Edit</button>
+                          <button
+                            className="row-action-btn"
+                            style={{ color: addon.active ? "var(--dash-danger)" : "var(--dash-success)" }}
+                            onClick={() => handleToggleAddon(addon)}
+                            disabled={togglingAddonId === addon.id}
+                          >
+                            {togglingAddonId === addon.id
+                              ? "..."
+                              : addon.active ? "Deactivate" : "Activate"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -251,6 +329,15 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* Add-on Side Panel */}
+      {addonPanelOpen && (
+        <AddonPanel
+          addon={editingAddon}
+          onClose={() => { setAddonPanelOpen(false); setEditingAddon(null); }}
+          onSuccess={handleAddonSuccess}
+        />
+      )}
     </>
   );
 }
