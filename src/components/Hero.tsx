@@ -44,7 +44,6 @@ export default function Hero() {
             alt="Hero Background"
             fill
             priority
-            unoptimized={true}
             className="hero-bg-image"
           />
           <div className="hero-overlay" />
