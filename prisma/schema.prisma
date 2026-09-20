@@ -70,15 +70,73 @@ enum UserRole {
 
 // ─── Property / Rooms ─────────────────────────────────────────────────────
 
+model Hotel {
+  id                 String   @id @default(cuid())
+  name               String
+  description        String?
+  address            String?
+  latitude           Float?
+  longitude          Float?
+  distanceFromYala   Float?
+  category           String?  // e.g. Budget, Comfort, Premium
+  facilities         String[]
+  images             String[]
+  active             Boolean  @default(true)
+  
+  // Provider integration
+  providerConnectionId String?
+  externalId         String?
+
+  roomTypes          RoomType[]
+  bookings           Booking[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model HotelProviderConnection {
+  id                 String   @id @default(cuid())
+  provider           String   // e.g. "SITEMINDER"
+  externalPropertyId String
+  status             String   // e.g. "ACTIVE", "DISCONNECTED"
+  credentials        Json?    // e.g. { "username": "...", "password": "..." }
+  lastSyncAt         DateTime?
+  metadata           Json?
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
 model RoomType {
   id             String   @id @default(cuid())
+  hotelId        String?
+  hotel          Hotel?   @relation(fields: [hotelId], references: [id])
+  externalId     String?
   name           String   // e.g. "Deluxe Tent", "Premium Suite"
   description    String?
   maxCapacity    Int
   pricePerNight  Float
+  active         Boolean  @default(true)
+  images         String[]
+  
+  ratePlans      RatePlan[]
   rooms          Room[]
   bookings       Booking[]
   createdAt      DateTime @default(now())
+}
+
+model RatePlan {
+  id                 String   @id @default(cuid())
+  hotelId            String
+  roomTypeId         String
+  roomType           RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  externalId         String?
+  name               String
+  mealPlan           String?
+  cancellationPolicy String?
+  active             Boolean  @default(true)
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }
 
 model Room {
@@ -113,9 +171,14 @@ model Booking {
   guestCountry    String
 
   hotel           String        @default("Yala Diary")
+  hotelRef        Hotel?        @relation(fields: [hotelId], references: [id])
+  hotelId         String?
+  
+  externalReservationId String? // ID from Channel Manager
 
   roomType        RoomType      @relation(fields: [roomTypeId], references: [id])
   roomTypeId      String
+  ratePlanId      String?
 
   room            Room?         @relation(fields: [roomId], references: [id])
   roomId          String?
