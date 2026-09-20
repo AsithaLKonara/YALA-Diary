@@ -94,6 +94,18 @@ export async function POST(req: Request) {
       }
     });
 
+    // Fire real-time notification
+    try {
+      const { createNotification } = await import("@/lib/notifications");
+      await createNotification({
+        title: "New Booking Created",
+        message: `Booking ${booking.ref} by ${booking.guestName} has been confirmed.`,
+        eventType: "notifyNewBooking"
+      });
+    } catch (err) {
+      console.error("Failed to push notification", err);
+    }
+
     return NextResponse.json({ success: true, booking }, { status: 201 });
   } catch (error) {
     console.error("Admin create booking error:", error);

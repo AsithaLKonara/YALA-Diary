@@ -76,14 +76,36 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
-      <div className="admin-sidebar-footer">
-        <div className="admin-sidebar-avatar">A</div>
-        {!collapsed && (
-          <div>
-            <div className="admin-sidebar-user-name">Admin</div>
-            <div className="admin-sidebar-user-role">Super Admin</div>
-          </div>
-        )}
+      <div className="admin-sidebar-footer" style={{ borderTop: "1px solid var(--dash-border)", paddingTop: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+          <div className="admin-sidebar-avatar">A</div>
+          {!collapsed && (
+            <div>
+              <div className="admin-sidebar-user-name">Admin</div>
+              <div className="admin-sidebar-user-role">Super Admin</div>
+            </div>
+          )}
+        </div>
+        <button 
+          onClick={() => {
+            // @ts-ignore
+            import("next-auth/react").then((m) => m.signOut({ callbackUrl: "/" }))
+          }}
+          style={{
+            display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "8px 12px",
+            background: "transparent", border: "none", color: "var(--dash-muted)", cursor: "pointer",
+            borderRadius: 8, transition: "background 0.2s, color 0.2s", justifyContent: collapsed ? "center" : "flex-start"
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; e.currentTarget.style.color = "#ef4444"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--dash-muted)"; }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          {!collapsed && <span style={{ fontSize: "0.85rem", fontWeight: 500 }}>Logout</span>}
+        </button>
       </div>
     </aside>
   );
