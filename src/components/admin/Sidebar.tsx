@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   {
     section: "System",
     items: [
+      { label: "Users", href: "/admin/users", icon: UsersIcon },
       { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
     ],
   },
