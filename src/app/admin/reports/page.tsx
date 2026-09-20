@@ -120,7 +120,7 @@ export default function ReportsPage() {
                 <YAxis tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} tick={{ fill: "rgba(244,253,248,0.5)", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip
                   contentStyle={{ background: "#0d1a10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, color: "#f4fdf8" }}
-                  formatter={(v: number) => [`$${v.toLocaleString()}`, "Revenue"]}
+                  formatter={(v: unknown) => [`$${(v as number).toLocaleString()}`, "Revenue"]}
                 />
                 <Area type="monotone" dataKey="revenue" stroke="#9acd32" strokeWidth={2} fill="url(#revGrad)" />
               </AreaChart>
@@ -140,7 +140,7 @@ export default function ReportsPage() {
                   <YAxis tickFormatter={(v) => `${v}%`} tick={{ fill: "rgba(244,253,248,0.5)", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ background: "#0d1a10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, color: "#f4fdf8" }}
-                    formatter={(v: number) => [`${v}%`, "Occupancy"]}
+                    formatter={(v: unknown) => [`${v as number}%`, "Occupancy"]}
                   />
                   <Bar dataKey="rate" fill="rgba(154,205,50,0.35)" radius={[3, 3, 0, 0]}>
                     {OCCUPANCY_DATA.map((_, i) => (
@@ -165,7 +165,7 @@ export default function ReportsPage() {
                   <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "rgba(244,253,248,0.7)" }} />
                   <Tooltip
                     contentStyle={{ background: "#0d1a10", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, color: "#f4fdf8" }}
-                    formatter={(v: number) => [`${v}%`, "Share"]}
+                    formatter={(v: unknown) => [`${v as number}%`, "Share"]}
                   />
                 </PieChart>
               </ResponsiveContainer>

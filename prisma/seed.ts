@@ -75,14 +75,11 @@ async function main() {
     const hashedPassword = await bcrypt.hash(u.password, SALT_ROUNDS);
     await prisma.user.upsert({
       where: { email: u.email },
-      update: { role: u.role },
+      update: { role: u.role, password: hashedPassword },
       create: {
         name: u.name,
         email: u.email,
-        // Store hashed password in image field as a convention for Credentials
-        // When you add Credentials provider, look here for the hash.
-        // In production, add a dedicated `password` column.
-        image: `bcrypt:${hashedPassword}`,
+        password: hashedPassword,
         role: u.role,
       },
     });

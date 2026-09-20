@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import Image from "next/image";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import "./auth.css";
 import "@/app/sections.css";
 import Footer from "@/components/Footer";
@@ -18,22 +20,85 @@ const GoogleIcon = () => (
   </svg>
 );
 
-// Apple SVG Icon
-const AppleIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff">
-    <path d="M16.365 1.545c1.47 1.77 1.365 4.38-.285 4.59-1.635.225-3.375-1.425-4.845-3.195-1.47-1.785-1.575-4.2-.075-4.425 1.515-.225 3.735 1.26 5.205 3.03zm-1.095 5.565c-2.31.06-4.11 1.485-5.205 1.485-1.095 0-2.835-1.35-4.545-1.35-2.19 0-4.23 1.275-5.355 3.24C-2.28 15.3 1.095 22.95 4.395 22.95c1.605 0 2.22-1.005 4.14-1.005 1.89 0 2.475 1.005 4.17 1.005 3.39 0 5.415-4.71 6.36-7.125-3.03-1.2-3.48-5.61-.555-7.23-.975-1.41-2.475-1.92-3.99-1.92z"/>
-  </svg>
-);
+function AuthContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams?.get("callbackUrl") || "/";
+  const urlError = searchParams?.get("error");
 
-// Facebook SVG Icon
-const FacebookIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="#1877F2">
-    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-  </svg>
-);
-
-export default function AuthPage() {
   const [mode, setMode] = useState<AuthMode>("login");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(
+    urlError === "Configuration" ? "Server configuration error (missing OAuth keys)" :
+    urlError === "OAuthSignin" ? "Error in constructing the OAuth authorization URL." :
+    urlError === "OAuthCallback" ? "Error handling the OAuth response." :
+    urlError === "OAuthCreateAccount" ? "Could not create OAuth provider user in the database." :
+    urlError === "EmailCreateAccount" ? "Could not create email provider user in the database." :
+    urlError === "Callback" ? "Error in the OAuth callback handler route." :
+    urlError === "OAuthAccountNotLinked" ? "Email already exists with a different provider." :
+    urlError === "EmailSignin" ? "Sending the e-mail with the verification token failed." :
+    urlError === "CredentialsSignin" ? "Sign in failed. Check the details you provided are correct." :
+    urlError === "SessionRequired" ? "Please sign in to access this page." :
+    urlError ? "An error occurred during authentication." : ""
+  );
+  const [message, setMessage] = useState("");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const res = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+      callbackUrl,
+    });
+
+    if (res?.error) {
+      setError("Invalid email or password");
+      setLoading(false);
+    } else {
+      router.push(callbackUrl);
+      router.refresh();
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Registration failed");
+      }
+
+      setMessage("Registration successful! Please sign in.");
+      setMode("login");
+      setPassword("");
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError(String(err));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -64,29 +129,31 @@ export default function AuthPage() {
                 <h2 className="auth-title">Welcome Back</h2>
                 <p className="auth-subtitle">Sign in to your account</p>
                 
-                <form onSubmit={(e) => e.preventDefault()}>
+                <form onSubmit={handleLogin}>
+                  {error && <div style={{ color: '#ff4d4f', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
+                  {message && <div style={{ color: '#52c41a', marginBottom: '1rem', fontSize: '0.875rem' }}>{message}</div>}
                   <div className="auth-group">
                     <label className="auth-label">Email Address</label>
-                    <input type="email" className="auth-input" placeholder="david@example.com" />
+                    <input type="email" className="auth-input" placeholder="david@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
                   </div>
                   <div className="auth-group">
                     <label className="auth-label">Password</label>
-                    <input type="password" className="auth-input" placeholder="••••••••" />
-                    <span className="auth-forgot" onClick={() => setMode("forgot")}>Forgot Password?</span>
+                    <input type="password" className="auth-input" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required />
+                    {/* <span className="auth-forgot" onClick={() => { setMode("forgot"); setError(""); setMessage(""); }}>Forgot Password?</span> */}
                   </div>
-                  <button className="auth-btn">Sign In</button>
+                  <button className="auth-btn" disabled={loading}>{loading ? "Signing In..." : "Sign In"}</button>
                 </form>
 
                 <div className="auth-divider">or continue with</div>
 
                 <div className="social-auth">
-                  <button className="social-btn"><GoogleIcon /> Google</button>
-                  <button className="social-btn"><AppleIcon /> Apple</button>
-                  <button className="social-btn"><FacebookIcon /> Facebook</button>
+                  <button type="button" className="social-btn" onClick={() => signIn("google", { callbackUrl })}><GoogleIcon /> Google</button>
+                  {/* <button className="social-btn"><AppleIcon /> Apple</button>
+                  <button className="social-btn"><FacebookIcon /> Facebook</button> */}
                 </div>
 
                 <div className="auth-switch">
-                  Don&apos;t have an account? <span onClick={() => setMode("register")}>Sign Up</span>
+                  Don&apos;t have an account? <span onClick={() => { setMode("register"); setError(""); setMessage(""); }}>Sign Up</span>
                 </div>
               </div>
             )}
@@ -96,32 +163,33 @@ export default function AuthPage() {
                 <h2 className="auth-title">Create Account</h2>
                 <p className="auth-subtitle">Join us for exclusive safari access</p>
                 
-                <form onSubmit={(e) => e.preventDefault()}>
+                <form onSubmit={handleRegister}>
+                  {error && <div style={{ color: '#ff4d4f', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
                   <div className="auth-group">
                     <label className="auth-label">Full Name</label>
-                    <input type="text" className="auth-input" placeholder="David Attenborough" />
+                    <input type="text" className="auth-input" placeholder="David Attenborough" value={name} onChange={e => setName(e.target.value)} required />
                   </div>
                   <div className="auth-group">
                     <label className="auth-label">Email Address</label>
-                    <input type="email" className="auth-input" placeholder="david@example.com" />
+                    <input type="email" className="auth-input" placeholder="david@example.com" value={email} onChange={e => setEmail(e.target.value)} required />
                   </div>
                   <div className="auth-group">
                     <label className="auth-label">Password</label>
-                    <input type="password" className="auth-input" placeholder="••••••••" />
+                    <input type="password" className="auth-input" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required minLength={8} />
                   </div>
-                  <button className="auth-btn">Create Account</button>
+                  <button className="auth-btn" disabled={loading}>{loading ? "Creating Account..." : "Create Account"}</button>
                 </form>
 
                 <div className="auth-divider">or register with</div>
 
                 <div className="social-auth">
-                  <button className="social-btn"><GoogleIcon /> Google</button>
-                  <button className="social-btn"><AppleIcon /> Apple</button>
-                  <button className="social-btn"><FacebookIcon /> Facebook</button>
+                  <button type="button" className="social-btn" onClick={() => signIn("google", { callbackUrl })}><GoogleIcon /> Google</button>
+                  {/* <button className="social-btn"><AppleIcon /> Apple</button>
+                  <button className="social-btn"><FacebookIcon /> Facebook</button> */}
                 </div>
 
                 <div className="auth-switch">
-                  Already have an account? <span onClick={() => setMode("login")}>Log In</span>
+                  Already have an account? <span onClick={() => { setMode("login"); setError(""); }}>Log In</span>
                 </div>
               </div>
             )}
@@ -131,16 +199,17 @@ export default function AuthPage() {
                 <h2 className="auth-title">Reset Password</h2>
                 <p className="auth-subtitle">We&apos;ll send you instructions to reset it</p>
                 
-                <form onSubmit={(e) => e.preventDefault()}>
+                <form onSubmit={(e) => { e.preventDefault(); setMessage("Reset link sent to your email!"); }}>
+                  {message && <div style={{ color: '#52c41a', marginBottom: '1rem', fontSize: '0.875rem' }}>{message}</div>}
                   <div className="auth-group">
                     <label className="auth-label">Email Address</label>
-                    <input type="email" className="auth-input" placeholder="david@example.com" />
+                    <input type="email" className="auth-input" placeholder="david@example.com" required />
                   </div>
                   <button className="auth-btn" style={{ marginTop: 20 }}>Send Reset Link</button>
                 </form>
 
                 <div className="auth-switch" style={{ marginTop: 40 }}>
-                  Remembered your password? <span onClick={() => setMode("login")}>Back to Login</span>
+                  Remembered your password? <span onClick={() => { setMode("login"); setMessage(""); }}>Back to Login</span>
                 </div>
               </div>
             )}
@@ -149,5 +218,13 @@ export default function AuthPage() {
       </div>
       <Footer />
     </>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthContent />
+    </Suspense>
   );
 }

@@ -2,11 +2,14 @@
 
 import React from "react";
 import { CurrencyProvider } from "@/context/CurrencyContext";
+import { SessionProvider } from "next-auth/react";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <CurrencyProvider>
-      {children}
-    </CurrencyProvider>
+    <SessionProvider>
+      <CurrencyProvider>
+        {children}
+      </CurrencyProvider>
+    </SessionProvider>
   );
 }

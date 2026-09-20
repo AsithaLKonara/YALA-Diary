@@ -22,6 +22,7 @@ export interface Booking {
   revenue: number;
   currency: string;
   addOns: string[];
+  promoCode?: string;
   specialRequests: string;
   createdAt: string;
 }

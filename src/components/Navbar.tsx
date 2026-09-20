@@ -3,11 +3,16 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCurrency, CurrencyCode } from "@/context/CurrencyContext";
+import { useSession, signOut } from "next-auth/react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { currency, setCurrency } = useCurrency();
+  const { data: session } = useSession();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const role = (session?.user as any)?.role;
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -65,7 +70,24 @@ export default function Navbar() {
               <option value="AUD">AUD</option>
             </select>
           </div>
-          <Link href="/auth" className="nav-signin-btn">SIGN IN</Link>
+          
+          {session ? (
+            <div className="nav-user-menu" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {(role === "ADMIN" || role === "STAFF") && (
+                <Link href="/admin/dashboard" className="nav-link" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)' }}>
+                  ADMIN PANEL
+                </Link>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }} onClick={() => signOut({ callbackUrl: "/" })}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', backgroundColor: 'var(--primary)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                  {session.user?.name?.charAt(0) || session.user?.email?.charAt(0) || 'U'}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Link href="/auth" className="nav-signin-btn">SIGN IN</Link>
+          )}
+
           <Link href="/book" className="nav-book-btn">BOOK NOW</Link>
         </div>
 
@@ -92,6 +114,16 @@ export default function Navbar() {
             <Link href="/explore" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Explore Yala</Link>
             <Link href="/about" className="mobile-nav-link" onClick={() => setIsOpen(false)}>About</Link>
             <Link href="#contact" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Contact</Link>
+            
+            {session && (role === "ADMIN" || role === "STAFF") && (
+              <Link href="/admin/dashboard" className="mobile-nav-link" style={{ color: 'var(--primary)' }} onClick={() => setIsOpen(false)}>Admin Panel</Link>
+            )}
+            
+            {session ? (
+              <button className="mobile-nav-link" style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', padding: 0 }} onClick={() => { signOut({ callbackUrl: "/" }); setIsOpen(false); }}>Sign Out</button>
+            ) : (
+              <Link href="/auth" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Sign In</Link>
+            )}
           </nav>
 
           <div className="mobile-menu-footer">
