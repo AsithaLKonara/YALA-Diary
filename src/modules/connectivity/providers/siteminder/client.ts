@@ -174,6 +174,17 @@ export class SiteMinderClient implements HotelChannelProvider {
 
   async createReservation(data: CreateReservationInput): Promise<Reservation> {
     try {
+      // Simulation triggers
+      if (data.guest.firstName === "TIMEOUT_TEST") {
+        throw new Error("PROVIDER_TIMEOUT");
+      }
+      if (data.guest.firstName === "RATE_LIMIT_TEST") {
+        throw new Error("PROVIDER_RATE_LIMIT");
+      }
+      if (data.guest.firstName === "BOOKING_FAILED_TEST") {
+        throw new Error("BOOKING_FAILED");
+      }
+
       // Sandbox Mock
       return {
         id: `SM-RES-${Math.floor(Math.random() * 100000)}`,

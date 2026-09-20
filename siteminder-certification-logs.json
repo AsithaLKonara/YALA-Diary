@@ -1,0 +1,59 @@
+[
+  {
+    "step": "Availability",
+    "request": {
+      "hotelId": "YALA-TEST-01",
+      "checkIn": "2026-10-01",
+      "checkOut": "2026-10-05",
+      "adults": 2,
+      "children": 0
+    },
+    "response": []
+  },
+  {
+    "step": "Create Reservation",
+    "request": {
+      "hotelId": "YALA-TEST-01",
+      "roomTypeId": "RT-01",
+      "ratePlanId": "RP-01",
+      "checkIn": "2026-10-01",
+      "checkOut": "2026-10-05",
+      "guest": {
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john@example.com",
+        "phone": "+1234567890",
+        "country": "US"
+      },
+      "price": {
+        "amount": 500,
+        "currency": "USD"
+      }
+    },
+    "response": {
+      "id": "SM-RES-61001",
+      "status": "CONFIRMED"
+    }
+  },
+  {
+    "step": "Modify Reservation",
+    "request": {
+      "reservationId": "SM-RES-61001",
+      "checkOut": "2026-10-06"
+    },
+    "response": {
+      "id": "SM-RES-61001",
+      "status": "MODIFIED"
+    }
+  },
+  {
+    "step": "Cancel Reservation",
+    "request": {
+      "reservationId": "SM-RES-61001",
+      "reason": "Guest requested cancellation"
+    },
+    "response": {
+      "status": "CANCELLED"
+    }
+  }
+]
