@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV_ITEMS = [
+type NavItem = { label: string; href: string; icon: React.FC; badge?: string };
+type NavGroup = { section: string; items: NavItem[] };
+
+const NAV_ITEMS: NavGroup[] = [
   {
     section: "Overview",
     items: [
@@ -14,7 +17,7 @@ const NAV_ITEMS = [
   {
     section: "Operations",
     items: [
-      { label: "Bookings", href: "/admin/bookings", icon: CalendarIcon, badge: "3" },
+      { label: "Bookings", href: "/admin/bookings", icon: CalendarIcon },
       { label: "Guests", href: "/admin/guests", icon: UsersIcon },
       { label: "Hotels", href: "/admin/hotels", icon: HomeIcon },
       { label: "Rooms", href: "/admin/rooms", icon: HomeIcon },
@@ -39,6 +42,24 @@ const NAV_ITEMS = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [collapsed] = useState(false);
+  const [bookingsCount, setBookingsCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function fetchBookingsCount() {
+      try {
+        const res = await fetch("/api/admin/bookings");
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.bookings) {
+          // You could also filter for 'PENDING' or upcoming, for now we show total
+          setBookingsCount(data.bookings.length);
+        }
+      } catch (err) {
+        console.error("Failed to fetch bookings count", err);
+      }
+    }
+    fetchBookingsCount();
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/admin/dashboard") return pathname === href;
@@ -68,9 +89,13 @@ export default function AdminSidebar() {
               >
                 <item.icon />
                 {!collapsed && <span>{item.label}</span>}
-                {!collapsed && item.badge && (
+                {!collapsed && (item.label === "Bookings" ? (
+                  bookingsCount !== null && bookingsCount > 0 ? (
+                    <span className="admin-nav-badge">{bookingsCount}</span>
+                  ) : null
+                ) : item.badge ? (
                   <span className="admin-nav-badge">{item.badge}</span>
-                )}
+                ) : null)}
               </Link>
             ))}
           </div>
