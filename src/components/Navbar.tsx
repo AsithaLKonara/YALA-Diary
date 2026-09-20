@@ -42,10 +42,10 @@ export default function Navbar() {
 
         {/* Desktop Navigation */}
         <nav className="desktop-nav">
-          <Link href="#safari" className="nav-link">Safari</Link>
-          <Link href="#experiences" className="nav-link">Experiences</Link>
-          <Link href="#explore" className="nav-link">Explore Yala</Link>
-          <Link href="#about" className="nav-link">About</Link>
+          <Link href="/safari" className="nav-link">Safari</Link>
+          <Link href="/experiences" className="nav-link">Experiences</Link>
+          <Link href="/explore" className="nav-link">Explore Yala</Link>
+          <Link href="/about" className="nav-link">About</Link>
         </nav>
 
         {/* Desktop Actions */}
@@ -86,10 +86,10 @@ export default function Navbar() {
           </div>
 
           <nav className="mobile-nav">
-            <Link href="#safari" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Safari</Link>
-            <Link href="#experiences" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Experiences</Link>
-            <Link href="#explore" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Explore Yala</Link>
-            <Link href="#about" className="mobile-nav-link" onClick={() => setIsOpen(false)}>About</Link>
+            <Link href="/safari" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Safari</Link>
+            <Link href="/experiences" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Experiences</Link>
+            <Link href="/explore" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Explore Yala</Link>
+            <Link href="/about" className="mobile-nav-link" onClick={() => setIsOpen(false)}>About</Link>
             <Link href="#contact" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Contact</Link>
           </nav>
 

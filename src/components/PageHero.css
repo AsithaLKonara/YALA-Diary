@@ -1,0 +1,53 @@
+.page-hero {
+  position: relative;
+  width: 100vw;
+  height: 60vh;
+  min-height: 400px;
+  max-height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.page-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.2) 50%, rgba(0, 0, 0, 0.4) 100%);
+  z-index: 1;
+}
+
+.page-hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 0 20px;
+  max-width: 800px;
+  margin-top: 80px; /* Account for navbar */
+}
+
+.page-hero-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 300;
+  letter-spacing: 0.05em;
+  color: #fff;
+  margin-bottom: 15px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.page-hero-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 300;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 768px) {
+  .page-hero {
+    height: 50vh;
+    min-height: 350px;
+  }
+}
