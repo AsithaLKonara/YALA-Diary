@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { Calendar, MapPin, Users, ChevronDown, Check } from "lucide-react";
+import { useCurrency } from "@/context/CurrencyContext";
 
 interface Room {
   id: number;
@@ -204,6 +205,7 @@ function Step1({ data, updateData, next }: StepProps) {
 }
 
 function Step2({ updateData, next, back }: StepProps) {
+  const { formatPrice } = useCurrency();
   const rooms: Room[] = [
     { id: 1, name: "Luxury Explorer Tent", price: 350, img: "/images/assets/hero/2147a00f-f329-4e74-8661-98ef719e1f42.jpg", features: ["Queen Bed", "En-suite Bathroom", "Jungle View"] },
     { id: 2, name: "Family Safari Suite", price: 550, img: "/images/assets/hero/pexels-gottapics-17892001.jpg", features: ["2 Bedrooms", "Private Deck", "Outdoor Shower"] },
@@ -228,7 +230,7 @@ function Step2({ updateData, next, back }: StepProps) {
               <div className="room-features">
                 {r.features.map((f, i) => <span key={i} className="room-feature"><Check size={14} color="var(--primary)"/> {f}</span>)}
               </div>
-              <div className="room-price">${r.price} <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>/ night</span></div>
+              <div className="room-price">{formatPrice(r.price)} <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>/ night</span></div>
               <button className="btn-primary" style={{ width: '100%' }} onClick={() => handleSelect(r)}>Select Room</button>
             </div>
           </div>
@@ -242,6 +244,7 @@ function Step2({ updateData, next, back }: StepProps) {
 }
 
 function Step3({ data, updateData, next, back }: StepProps) {
+  const { formatPrice } = useCurrency();
   const addonsList: Addon[] = [
     { id: "safari", name: "Extra Full-Day Safari Drive", desc: "Private jeep with expert naturalist guide", price: 150 },
     { id: "lunch", name: "Bush Lunch Experience", desc: "Five-course meal served in the wilderness", price: 80 },
@@ -272,7 +275,7 @@ function Step3({ data, updateData, next, back }: StepProps) {
                 <p>{a.desc}</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                <span className="addon-price">+${a.price}</span>
+                <span className="addon-price">+{formatPrice(a.price)}</span>
                 <div style={{ width: 24, height: 24, border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isSelected ? 'var(--primary)' : 'transparent' }}>
                   {isSelected && <Check size={16} color="#000" />}
                 </div>
@@ -293,6 +296,7 @@ function Step3({ data, updateData, next, back }: StepProps) {
 }
 
 function Step4({ data, back }: { data: BookingData, back: () => void }) {
+  const { formatPrice } = useCurrency();
   const roomPrice = data.room ? data.room.price : 0;
   const addonsTotal = data.addons.reduce((sum, a) => sum + a.price, 0);
   const total = roomPrice + addonsTotal;
@@ -358,19 +362,19 @@ function Step4({ data, back }: { data: BookingData, back: () => void }) {
         
         <div className="summary-row">
           <span style={{ color: '#fff', fontWeight: 600 }}>{data.room?.name || "Tent"}</span>
-          <span style={{ color: '#fff' }}>${roomPrice}</span>
+          <span style={{ color: '#fff' }}>{formatPrice(roomPrice)}</span>
         </div>
 
         {data.addons.map((a) => (
           <div className="summary-row" key={a.id} style={{ fontSize: '0.875rem' }}>
             <span>{a.name}</span>
-            <span>${a.price}</span>
+            <span>{formatPrice(a.price)}</span>
           </div>
         ))}
 
         <div className="summary-total">
           <span>Total</span>
-          <span>${total}</span>
+          <span>{formatPrice(total)}</span>
         </div>
 
         <button className="btn-primary" style={{ width: '100%', marginTop: 30, padding: '20px', fontSize: '1.125rem' }}>Complete Booking</button>

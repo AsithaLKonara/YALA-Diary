@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useCurrency, CurrencyCode } from "@/context/CurrencyContext";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { currency, setCurrency } = useCurrency();
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -49,7 +51,21 @@ export default function Navbar() {
 
         {/* Desktop Actions */}
         <div className="header-actions">
-          <span className="nav-lang">EN</span>
+          <div className="nav-lang-currency">
+            <span>EN</span>
+            <span className="lang-divider">|</span>
+            <select 
+              className="currency-select"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+            >
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="LKR">LKR</option>
+              <option value="AUD">AUD</option>
+            </select>
+          </div>
           <Link href="/book" className="nav-book-btn">BOOK NOW</Link>
         </div>
 
@@ -79,6 +95,20 @@ export default function Navbar() {
           </nav>
 
           <div className="mobile-menu-footer">
+            <div className="mobile-currency-row">
+              <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.875rem" }}>CURRENCY</span>
+              <select 
+                className="mobile-currency-select"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+              >
+                <option value="USD">USD ($)</option>
+                <option value="EUR">EUR (€)</option>
+                <option value="GBP">GBP (£)</option>
+                <option value="LKR">LKR (Rs)</option>
+                <option value="AUD">AUD (A$)</option>
+              </select>
+            </div>
             <div className="mobile-divider"></div>
             <Link href="/book" className="mobile-book-btn" onClick={() => setIsOpen(false)}>BOOK YOUR SAFARI</Link>
           </div>

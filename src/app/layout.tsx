@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CursorGlow from "@/components/CursorGlow";
 import Navbar from "@/components/Navbar";
+import Providers from "@/components/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,11 +24,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <CursorGlow />
-        <Navbar />
-        <main className="main-content">
-          {children}
-        </main>
+        <Providers>
+          <CursorGlow />
+          <Navbar />
+          <main className="main-content">
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );
