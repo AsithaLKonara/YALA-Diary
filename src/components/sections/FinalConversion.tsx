@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function FinalConversion() {
   return (
@@ -10,8 +11,8 @@ export default function FinalConversion() {
       </div>
       <div className="final-content">
         <h2 className="huge-title">Your Wild Side Is Waiting.</h2>
-        <p className="final-desc">Choose your date. We&apos;ll take care of the rest.</p>
-        <button className="final-book-btn">Book Your Safari →</button>
+        <h2 className="final-title">Are you ready to meet the wild?</h2>
+        <Link href="/book" className="final-book-btn">Book Your Safari →</Link>
       </div>
     </section>
   );

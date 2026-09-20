@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 
 const EXPERIENCES = [
   {
@@ -48,7 +49,7 @@ export default function SafariExperiences() {
                   <span>{exp.duration}</span>
                   <span>From {exp.price}</span>
                 </div>
-                <button className="view-btn">View Safari →</button>
+                <Link href="/book" className="view-btn" style={{ display: 'inline-block' }}>View Safari →</Link>
               </div>
             </div>
           </div>

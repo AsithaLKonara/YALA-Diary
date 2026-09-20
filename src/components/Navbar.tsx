@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -31,7 +32,7 @@ export default function Navbar() {
         </div>
         
         <div className="header-actions">
-          <button className="nav-book-btn">Book Safari</button>
+          <Link href="/book" className="nav-book-btn" style={{ display: 'inline-block', textAlign: 'center' }}>Book Safari</Link>
           <button 
             className={`hamburger ${isOpen ? "active" : ""}`} 
             onClick={() => setIsOpen(!isOpen)}

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import "./Hero.css";
 
 const SLIDES = [
@@ -86,7 +87,7 @@ export default function Hero() {
             transition={{ duration: 0.8, delay: 1.1 }}
             className="hero-ctas"
           >
-            <button className="cta-primary glass-btn">Book Your Safari</button>
+            <Link href="/book" className="cta-primary glass-btn">Book Your Safari</Link>
             <button className="cta-secondary glass-btn-outline">Explore Yala</button>
           </motion.div>
         </div>

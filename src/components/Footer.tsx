@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Footer() {
   return (
@@ -41,7 +42,7 @@ export default function Footer() {
         
         <div className="footer-action">
           <h4 className="footer-heading">Ready for the wild?</h4>
-          <button className="book-btn-outline">Book Your Safari</button>
+          <Link href="/book" className="book-btn-outline" style={{ display: 'inline-block', textAlign: 'center', padding: '12px 24px', border: '1px solid #fff', borderRadius: '4px' }}>Book Your Safari</Link>
         </div>
       </div>
       <div className="footer-bottom">
