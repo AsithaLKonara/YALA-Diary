@@ -2,10 +2,18 @@
 // Creates admin, staff, and guest accounts for local development
 // Run with: npx ts-node --compiler-options '{"module":"CommonJS"}' prisma/seed.ts
 
-import { PrismaClient } from "../src/generated/prisma";
+import "dotenv/config";
+import { PrismaClient } from "../src/generated/prisma/client";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+import { Pool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const connectionString = `${process.env.DATABASE_URL}`;
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+
+const prisma = new PrismaClient({ adapter });
 
 const SALT_ROUNDS = 12;
 
