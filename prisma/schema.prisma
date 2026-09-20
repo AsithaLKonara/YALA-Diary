@@ -213,3 +213,17 @@ model SafariBooking {
   bookingId String
   guests    Int        @default(1)
 }
+
+// ─── Settings / Configuration ─────────────────────────────────────────────
+
+model HotelProfile {
+  id           String   @id @default(cuid())
+  hotelName    String   @default("Yala Diary")
+  address      String
+  phone        String
+  email        String
+  website      String
+  checkInTime  String   @default("14:00")
+  checkOutTime String   @default("11:00")
+  updatedAt    DateTime @updatedAt
+}
