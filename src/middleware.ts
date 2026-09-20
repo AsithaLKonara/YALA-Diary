@@ -13,7 +13,11 @@ export async function middleware(req: NextRequest) {
     });
 
     if (!token) {
-      // Not authenticated — redirect to sign-in
+      // Not authenticated
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      
       const signInUrl = new URL("/auth", req.url);
       signInUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(signInUrl);
@@ -22,15 +26,21 @@ export async function middleware(req: NextRequest) {
     const role = token.role as string | undefined;
 
     // Admin/Staff routes protection
-    if (pathname.startsWith("/admin")) {
+    if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
       if (role !== "ADMIN" && role !== "STAFF") {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
         return NextResponse.redirect(new URL("/guest/dashboard", req.url));
       }
     }
 
     // Guest routes protection
-    if (pathname.startsWith("/guest")) {
+    if (pathname.startsWith("/guest") || pathname.startsWith("/api/guest")) {
       if (role === "ADMIN" || role === "STAFF") {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
         return NextResponse.redirect(new URL("/admin/dashboard", req.url));
       }
     }
@@ -40,5 +50,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/guest/:path*"],
+  matcher: ["/admin/:path*", "/guest/:path*", "/api/admin/:path*", "/api/guest/:path*"],
 };

@@ -56,15 +56,13 @@ function AuthContent() {
       redirect: false,
       email,
       password,
-      callbackUrl,
     });
 
     if (res?.error) {
       setError("Invalid email or password");
       setLoading(false);
     } else {
-      router.push(callbackUrl);
-      router.refresh();
+      window.location.assign(callbackUrl);
     }
   };
 
