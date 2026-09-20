@@ -23,7 +23,7 @@
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 100%);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.2) 100%);
   z-index: 1;
 }
 
@@ -181,7 +181,7 @@
     align-items: flex-end;
     padding-bottom: 120px;
   }
-  
+
   .hero-content-inner {
     padding-top: 0;
   }
@@ -190,33 +190,36 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
-  .glass-btn, .glass-btn-outline {
+
+  .glass-btn,
+  .glass-btn-outline {
     text-align: center;
   }
 
   .hero-controls {
     right: 30px;
-}
+  }
 
-@media (max-width: 768px) {
-  .hero-content {
-    padding: 0 20px;
-    padding-bottom: 80px;
-  }
-  
-  .hero-ctas {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .glass-btn, .glass-btn-outline {
-    width: 100%;
-    text-align: center;
-    justify-content: center;
-  }
-  
-  .hero-controls {
-    display: none;
+  @media (max-width: 768px) {
+    .hero-content {
+      padding: 0 20px;
+      padding-bottom: 80px;
+    }
+
+    .hero-ctas {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .glass-btn,
+    .glass-btn-outline {
+      width: 100%;
+      text-align: center;
+      justify-content: center;
+    }
+
+    .hero-controls {
+      display: none;
+    }
   }
 }

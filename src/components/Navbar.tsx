@@ -37,8 +37,7 @@ export default function Navbar() {
       <div className="header-container">
         {/* Logo Group */}
         <Link href="/" className="header-logo-group">
-          <span className="logo-main">YALA</span>
-          <span className="logo-sub">NATIONAL PARK</span>
+          <span className="logo-main">YALA DIARY</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -54,7 +53,7 @@ export default function Navbar() {
           <div className="nav-lang-currency">
             <span>EN</span>
             <span className="lang-divider">|</span>
-            <select 
+            <select
               className="currency-select"
               value={currency}
               onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
@@ -97,7 +96,7 @@ export default function Navbar() {
           <div className="mobile-menu-footer">
             <div className="mobile-currency-row">
               <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.875rem" }}>CURRENCY</span>
-              <select 
+              <select
                 className="mobile-currency-select"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
