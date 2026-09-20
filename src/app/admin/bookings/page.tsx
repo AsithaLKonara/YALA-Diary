@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import AdminTopbar from "@/components/admin/Topbar";
 import { Loader2 } from "lucide-react";
+import NewBookingPanel from "@/components/admin/NewBookingPanel";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "all", label: "All Statuses" },
@@ -29,6 +30,7 @@ export default function BookingsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const [showNewBooking, setShowNewBooking] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -88,9 +90,9 @@ export default function BookingsPage() {
             <button className="btn-ghost">
               <DownloadIcon /> Export CSV
             </button>
-            <Link href="/admin/bookings/new" className="btn-primary">
+            <button onClick={() => setShowNewBooking(true)} className="btn-primary">
               <PlusIcon /> New Booking
-            </Link>
+            </button>
           </div>
         </div>
 
@@ -245,6 +247,16 @@ export default function BookingsPage() {
           )}
         </div>
       </div>
+
+      {showNewBooking && (
+        <NewBookingPanel
+          onClose={() => setShowNewBooking(false)}
+          onSuccess={() => {
+            setShowNewBooking(false);
+            fetchBookings();
+          }}
+        />
+      )}
     </>
   );
 }
