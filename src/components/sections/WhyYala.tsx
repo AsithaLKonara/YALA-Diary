@@ -22,6 +22,7 @@ export default function WhyYala() {
             src="/images/assets/leapords/pexels-alexn-33651245.jpg" 
             alt="Yala Leopard" 
             fill 
+            sizes="(max-width: 1024px) 100vw, 50vw"
             className="why-yala-image"
           />
         </div>

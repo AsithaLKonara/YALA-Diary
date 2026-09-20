@@ -5,7 +5,7 @@ export default function FinalConversion() {
   return (
     <section className="final-conversion">
       <div className="final-bg">
-        <Image src="/images/assets/elephants/pexels-max-zhang-2164054577-39586335.jpg" alt="Yala Safari" fill className="final-img" />
+        <Image src="/images/assets/elephants/pexels-max-zhang-2164054577-39586335.jpg" alt="Yala Safari" fill sizes="100vw" className="final-img" />
         <div className="final-overlay" />
       </div>
       <div className="final-content">

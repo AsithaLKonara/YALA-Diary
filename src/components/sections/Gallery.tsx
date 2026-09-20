@@ -20,7 +20,7 @@ export default function Gallery() {
       <div className="gallery-masonry">
         {IMAGES.map((src, idx) => (
           <div key={idx} className={`gallery-item item-${idx}`}>
-            <Image src={src} alt="Yala Story" fill className="gallery-img" />
+            <Image src={src} alt="Yala Story" fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="gallery-img" />
           </div>
         ))}
       </div>
