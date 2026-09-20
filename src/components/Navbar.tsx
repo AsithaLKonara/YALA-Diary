@@ -65,6 +65,7 @@ export default function Navbar() {
               <option value="AUD">AUD</option>
             </select>
           </div>
+          <Link href="/auth" className="nav-signin-btn">SIGN IN</Link>
           <Link href="/book" className="nav-book-btn">BOOK NOW</Link>
         </div>
 
