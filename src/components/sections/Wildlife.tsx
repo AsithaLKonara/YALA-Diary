@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useRef, useEffect } from "react";
 
 const WILDLIFE = [
   { name: "Leopard", image: "/images/assets/leapords/02cc3670-8eb1-4a03-a375-01f05fc46e3b.jpg" },
@@ -10,6 +12,25 @@ const WILDLIFE = [
 ];
 
 export default function Wildlife() {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (scrollRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+        // If we reached the end, reset to 0
+        if (scrollLeft + clientWidth >= scrollWidth - 10) {
+          scrollRef.current.scrollTo({ left: 0, behavior: "smooth" });
+        } else {
+          // Auto scroll by 300px (card width)
+          scrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
+        }
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <section className="wildlife-section section-padding">
       <div className="wildlife-header">
@@ -18,7 +39,7 @@ export default function Wildlife() {
           <span className="block text-muted">STAY FOR EVERYTHING ELSE.</span>
         </h2>
       </div>
-      <div className="wildlife-gallery-container">
+      <div className="wildlife-gallery-container no-scrollbar" ref={scrollRef}>
         <div className="wildlife-gallery">
           {WILDLIFE.map((animal, idx) => (
             <div key={idx} className="wildlife-card" style={{ backgroundImage: `url(${animal.image})` }}>
