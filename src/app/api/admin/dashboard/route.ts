@@ -51,7 +51,7 @@ export async function GET() {
     // Upcoming Bookings (Pending, Confirmed) Next 5
     const upcomingBookings = await prisma.booking.findMany({
       where: {
-        status: { in: ["PENDING", "CONFIRMED"] },
+        status: { in: ["DRAFT", "PENDING_PAYMENT", "PAYMENT_SUCCESS", "CREATING_RESERVATION", "CONFIRMED"] },
         checkIn: { gte: new Date(`${todayStr}T00:00:00.000Z`) }
       },
       orderBy: { checkIn: "asc" },

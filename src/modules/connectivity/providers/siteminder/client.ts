@@ -173,14 +173,40 @@ export class SiteMinderClient implements HotelChannelProvider {
   }
 
   async createReservation(data: CreateReservationInput): Promise<Reservation> {
-    return { id: "SM-RES-12345", status: "CONFIRMED" };
-  }
-
-  async modifyReservation(data: ModifyReservationInput): Promise<Reservation> {
-    return { id: data.reservationId, status: "CONFIRMED" };
+    try {
+      // Sandbox Mock
+      return {
+        id: `SM-RES-${Math.floor(Math.random() * 100000)}`,
+        status: "CONFIRMED"
+      };
+    } catch (error) {
+      console.error("Failed to create reservation", error);
+      throw error;
+    }
   }
 
   async cancelReservation(data: CancelReservationInput): Promise<void> {
-    return;
+    try {
+      // Sandbox Mock
+      console.log(`Cancelling reservation ${data.reservationId} for reason: ${data.reason}`);
+      return;
+    } catch (error) {
+      console.error("Failed to cancel reservation", error);
+      throw error;
+    }
+  }
+
+  async modifyReservation(data: ModifyReservationInput): Promise<Reservation> {
+    try {
+      // Sandbox Mock
+      console.log(`Modifying reservation ${data.reservationId}`);
+      return {
+        id: data.reservationId,
+        status: "MODIFIED"
+      };
+    } catch (error) {
+      console.error("Failed to modify reservation", error);
+      throw error;
+    }
   }
 }
