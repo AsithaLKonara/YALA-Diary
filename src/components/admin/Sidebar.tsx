@@ -16,6 +16,7 @@ const NAV_ITEMS = [
     items: [
       { label: "Bookings", href: "/admin/bookings", icon: CalendarIcon, badge: "3" },
       { label: "Guests", href: "/admin/guests", icon: UsersIcon },
+      { label: "Hotels", href: "/admin/hotels", icon: HomeIcon },
       { label: "Rooms", href: "/admin/rooms", icon: HomeIcon },
       { label: "Safari Slots", href: "/admin/safaris", icon: SunIcon },
     ],

@@ -71,15 +71,51 @@ export class SiteMinderClient implements HotelChannelProvider {
   // --- Implementation of HotelChannelProvider ---
   
   async getProperties(): Promise<Property[]> {
-    // For sandbox Phase 1, we return mock properties.
-    // In Phase 2, this will call `this.request("/properties")`
-    return [
-      { id: "SM-001", name: "Yala Safari Lodge (SiteMinder Test)", address: "Test Addr", facilities: ["WiFi"], images: [] }
-    ];
+    try {
+      // In production, this would call: return await this.request<Property[]>("/properties");
+      // Since SiteMinder sandbox might not have a reliable properties endpoint without configuration,
+      // we provide a robust mock structure to test our mapper and UI.
+      return [
+        {
+          id: "SM-HOTEL-01",
+          name: "Yala Safari Lodge (SiteMinder Test)",
+          address: "123 Safari Drive, Yala",
+          facilities: ["WiFi", "Pool", "Restaurant"],
+          images: ["https://example.com/yala1.jpg"],
+          rawRoomTypes: [
+            { id: "SM-RT-01", name: "Deluxe Tent", description: "Luxury tent", maxCapacity: 2, pricePerNight: 200 },
+            { id: "SM-RT-02", name: "Family Suite", description: "Large suite", maxCapacity: 4, pricePerNight: 350 }
+          ],
+          rawRatePlans: [
+            { id: "SM-RP-01", roomTypeId: "SM-RT-01", name: "Room Only", mealPlan: "None", cancellationPolicy: "Flexible" },
+            { id: "SM-RP-02", roomTypeId: "SM-RT-01", name: "Bed & Breakfast", mealPlan: "Breakfast", cancellationPolicy: "Non-Refundable" }
+          ]
+        },
+        {
+          id: "SM-HOTEL-02",
+          name: "Wild Trails Resort",
+          address: "45 Jungle Road, Yala",
+          facilities: ["WiFi", "Spa", "Safari Transfer"],
+          images: [],
+          rawRoomTypes: [
+            { id: "SM-RT-03", name: "Standard Room", description: "Cozy room", maxCapacity: 2, pricePerNight: 150 }
+          ],
+          rawRatePlans: []
+        }
+      ];
+    } catch (error) {
+      console.error("Failed to fetch properties from SiteMinder", error);
+      throw error;
+    }
   }
 
   async getProperty(propertyId: string): Promise<Property> {
-    return { id: propertyId, name: "Yala Safari Lodge (SiteMinder Test)", address: "Test Addr", facilities: ["WiFi"], images: [] };
+    const properties = await this.getProperties();
+    const prop = properties.find(p => p.id === propertyId);
+    if (!prop) {
+      throw new ProviderError("Property not found", "NOT_FOUND", 404);
+    }
+    return prop;
   }
 
   async getAvailability(params: AvailabilityParams): Promise<AvailabilityResult[]> {
