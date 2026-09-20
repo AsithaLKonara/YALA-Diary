@@ -2,13 +2,14 @@ import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 import { NextResponse } from "next/server";
 
-export const { auth: middleware } = NextAuth(authConfig);
+const { auth } = NextAuth(authConfig);
 
-export default middleware((req) => {
+export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/guest") || pathname.startsWith("/api/admin") || pathname.startsWith("/api/guest")) {
     const session = req.auth; // Auth.js automatically attaches the Session object here
+    console.log("MIDDLEWARE SESSION:", JSON.stringify(session, null, 2));
 
     if (!session) {
       // Not authenticated
