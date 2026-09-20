@@ -8,9 +8,9 @@ export default middleware((req) => {
   const { pathname } = req.nextUrl;
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/guest") || pathname.startsWith("/api/admin") || pathname.startsWith("/api/guest")) {
-    const token = req.auth; // Auth.js automatically attaches the decoded JWT here!
+    const session = req.auth; // Auth.js automatically attaches the Session object here
 
-    if (!token) {
+    if (!session) {
       // Not authenticated
       if (pathname.startsWith("/api/")) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,7 +21,8 @@ export default middleware((req) => {
       return NextResponse.redirect(signInUrl);
     }
 
-    const role = token.role as string | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const role = (session.user as any)?.role as string | undefined;
 
     // Admin/Staff routes protection
     if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
