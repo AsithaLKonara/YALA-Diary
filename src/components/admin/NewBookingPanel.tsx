@@ -224,7 +224,7 @@ export default function NewBookingPanel({ onClose, onSuccess }: NewBookingPanelP
           {error && <div style={{ color: "var(--dash-danger)", marginBottom: 20 }}>{error}</div>}
 
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 15 }}>
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={loading} style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {loading && <Loader2 size={16} className="spinner" />}
               Create Booking
