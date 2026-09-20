@@ -7,8 +7,15 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useSession } from "next-auth/react";
 
 interface Room {
-  id: string;
+  id: string; // Used as unique key (e.g. ratePlanId)
+  roomTypeId: string;
+  hotelId: string;
   name: string;
+  ratePlanId: string;
+  ratePlanName: string;
+  hotelExternalId?: string;
+  roomTypeExternalId?: string;
+  ratePlanExternalId?: string;
   pricePerNight: number;
   maxCapacity: number;
   availableRooms: number;
@@ -130,9 +137,11 @@ function Step1({ data, updateData, next, setAvailableRooms }: any) {
       // Inject some mock images/features based on name for now
       const roomsWithAssets = json.available.map((r: any) => {
         let img = "/images/assets/hero/pexels-gottapics-17892001.jpg";
-        if (r.name.toLowerCase().includes("tent")) img = "/images/assets/hero/2147a00f-f329-4e74-8661-98ef719e1f42.jpg";
+        if (r.roomTypeName.toLowerCase().includes("tent")) img = "/images/assets/hero/2147a00f-f329-4e74-8661-98ef719e1f42.jpg";
         return {
           ...r,
+          id: r.ratePlanId, // Use rate plan as unique selection
+          name: `${r.roomTypeName} (${r.ratePlanName})`,
           img,
           features: ["Queen Bed", "En-suite Bathroom", "Jungle View"]
         };
@@ -248,12 +257,45 @@ function Step1({ data, updateData, next, setAvailableRooms }: any) {
 // -----------------------------------------------------------------------------
 // STEP 2: Select Room
 // -----------------------------------------------------------------------------
-function Step2({ updateData, next, back, availableRooms }: any) {
+function Step2({ data, updateData, next, back, availableRooms }: any) {
   const { formatPrice } = useCurrency();
+  const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
-  const handleSelect = (r: Room) => {
-    updateData({ room: r });
-    next();
+  const handleSelect = async (r: Room) => {
+    setLoading(r.id);
+    setError("");
+    try {
+      // Revalidate Availability
+      // Note: In real app, we need the external IDs to pass to revalidate, 
+      // which we should ensure our API returns. For now we use the internal IDs 
+      // or mock the call if external IDs are missing.
+      const res = await fetch("/api/booking/revalidate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // Currently our search API returns internal IDs, but let's assume it maps to external for this sandbox
+          hotelExternalId: "SM-HOTEL-01", 
+          roomTypeExternalId: r.roomTypeId,
+          ratePlanExternalId: r.ratePlanId,
+          checkIn: data.checkIn,
+          checkOut: data.checkOut,
+          adults: data.adults,
+          children: data.children,
+          expectedPrice: r.pricePerNight
+        })
+      });
+      
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Room no longer available at this price.");
+
+      updateData({ room: r });
+      next();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(null);
+    }
   };
 
   return (
@@ -280,12 +322,22 @@ function Step2({ updateData, next, back, availableRooms }: any) {
                   {r.availableRooms} rooms left
                 </div>
                 <div className="room-price">{formatPrice(r.pricePerNight)} <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>/ night</span></div>
-                <button className="btn-primary" style={{ width: '100%' }} onClick={() => handleSelect(r)}>Select Room</button>
+                <button 
+                  className="btn-primary" 
+                  style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center' }} 
+                  onClick={() => handleSelect(r)}
+                  disabled={loading === r.id}
+                >
+                  {loading === r.id && <Loader2 size={16} className="spinner" />}
+                  {loading === r.id ? "Validating..." : "Select Room"}
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
+      
+      {error && <div style={{ color: "var(--dash-danger)", marginTop: 20, textAlign: "center" }}>{error}</div>}
       <div className="booking-actions" style={{ justifyContent: 'flex-start' }}>
         <button className="btn-secondary" onClick={back}>← Back</button>
       </div>

@@ -119,7 +119,57 @@ export class SiteMinderClient implements HotelChannelProvider {
   }
 
   async getAvailability(params: AvailabilityParams): Promise<AvailabilityResult[]> {
-    return [];
+    try {
+      // In production: return await this.request<AvailabilityResult[]>("/availability", { method: "POST", body: JSON.stringify(params) });
+      
+      // Sandbox mock logic:
+      // We'll simulate availability for SM-HOTEL-01
+      if (params.hotelId !== "SM-HOTEL-01") return [];
+
+      // If user asks for more than 5 adults, simulate sold out for Deluxe Tent
+      const isDeluxeSoldOut = params.adults > 5;
+      const isFamilySuiteSoldOut = params.adults > 8;
+
+      const results: AvailabilityResult[] = [];
+
+      if (!isDeluxeSoldOut) {
+        results.push({
+          hotelId: params.hotelId,
+          roomTypeId: "SM-RT-01",
+          ratePlanId: "SM-RP-01",
+          available: true,
+          roomsAvailable: 5,
+          price: { amount: 200, currency: "USD" },
+          cancellation: { type: "Flexible", deadline: "2026-10-01T00:00:00Z" }
+        });
+        results.push({
+          hotelId: params.hotelId,
+          roomTypeId: "SM-RT-01",
+          ratePlanId: "SM-RP-02",
+          available: true,
+          roomsAvailable: 5,
+          price: { amount: 250, currency: "USD" },
+          cancellation: { type: "Non-Refundable", deadline: "" }
+        });
+      }
+
+      if (!isFamilySuiteSoldOut) {
+        results.push({
+          hotelId: params.hotelId,
+          roomTypeId: "SM-RT-02",
+          ratePlanId: "SM-RP-01", // Assuming family suite has a rate plan
+          available: true,
+          roomsAvailable: 2,
+          price: { amount: 350, currency: "USD" },
+          cancellation: { type: "Flexible", deadline: "2026-10-01T00:00:00Z" }
+        });
+      }
+
+      return results;
+    } catch (error) {
+      console.error("Failed to fetch availability from SiteMinder", error);
+      throw error;
+    }
   }
 
   async createReservation(data: CreateReservationInput): Promise<Reservation> {
