@@ -2,12 +2,12 @@ import React from "react";
 import Image from "next/image";
 
 const IMAGES = [
-  "/images/hero/1.jpeg",
-  "/images/hero/2.jpg",
-  "/images/hero/3.jpg",
-  "/images/hero/4.jpg",
-  "/images/hero/5.jpg",
-  "/images/hero/6.jpg",
+  "/images/assets/leapords/40b9c466-0e48-45d2-905a-6db1190d9a66.jpg",
+  "/images/assets/elephants/pexels-leefinvrede-18463828.jpg",
+  "/images/assets/Birds/93745e42-735c-4481-a771-b81e7199dd9e.jpg",
+  "/images/assets/deer/910ca771-6819-4df7-b9f5-5b7addfb5643.jpg",
+  "/images/assets/peacock/pexels-rajukhanp-4920602.jpg",
+  "/images/assets/Fox/cf2e3ecc-dd5e-49dd-bd3a-54fdbad81af0.jpg",
 ];
 
 export default function Gallery() {

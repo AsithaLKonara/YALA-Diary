@@ -6,12 +6,14 @@ import Image from "next/image";
 import "./Hero.css";
 
 const SLIDES = [
-  { id: 1, src: "/images/hero/1.jpeg" },
-  { id: 2, src: "/images/hero/2.jpg" },
-  { id: 3, src: "/images/hero/3.jpg" },
-  { id: 4, src: "/images/hero/4.jpg" },
-  { id: 5, src: "/images/hero/5.jpg" },
-  { id: 6, src: "/images/hero/6.jpg" },
+  { id: 1, src: "/images/assets/hero/1.jpeg" },
+  { id: 2, src: "/images/assets/hero/2147a00f-f329-4e74-8661-98ef719e1f42.jpg" },
+  { id: 3, src: "/images/assets/hero/ad0f6c96-9754-4b2b-9ea9-346a82559470.jpg" },
+  { id: 4, src: "/images/assets/hero/cf2e3ecc-dd5e-49dd-bd3a-54fdbad81af0.jpg" },
+  { id: 5, src: "/images/assets/hero/pexels-gottapics-17892001.jpg" },
+  { id: 6, src: "/images/assets/hero/pexels-kichu98-34059235.jpg" },
+  { id: 7, src: "/images/assets/hero/pexels-rajukhanp-16828975.jpg" },
+  { id: 8, src: "/images/assets/hero/pexels-sargaraj-tr-423973759-19669427.jpg" },
 ];
 
 export default function Hero() {

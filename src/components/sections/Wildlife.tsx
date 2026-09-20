@@ -1,12 +1,12 @@
 import React from "react";
 
 const WILDLIFE = [
-  { name: "Leopard", image: "/images/hero/1.jpeg" },
-  { name: "Elephant", image: "/images/hero/2.jpg" },
-  { name: "Crocodile", image: "/images/hero/3.jpg" },
-  { name: "Peacock", image: "/images/hero/4.jpg" },
-  { name: "Deer", image: "/images/hero/5.jpg" },
-  { name: "Buffalo", image: "/images/hero/6.jpg" },
+  { name: "Leopard", image: "/images/assets/leapords/02cc3670-8eb1-4a03-a375-01f05fc46e3b.jpg" },
+  { name: "Elephant", image: "/images/assets/elephants/a38ef9ac-b5c2-4639-a881-501a7af3dd87.jpg" },
+  { name: "Crocodile", image: "/images/assets/Crokadile/2147a00f-f329-4e74-8661-98ef719e1f42.jpg" },
+  { name: "Peacock", image: "/images/assets/peacock/f95d8964-1bfa-4218-91ad-49e779db237e.jpg" },
+  { name: "Deer", image: "/images/assets/deer/47ffc001-c54f-4b1b-8217-44d9f175fc4c.jpg" },
+  { name: "Monkey", image: "/images/assets/Monkeys/pexels-kichu98-34059235.jpg" },
 ];
 
 export default function Wildlife() {

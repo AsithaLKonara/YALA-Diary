@@ -19,7 +19,7 @@ export default function WhyYala() {
         </div>
         <div className="why-yala-image-container">
           <Image 
-            src="/images/hero/3.jpg" 
+            src="/images/assets/leapords/pexels-alexn-33651245.jpg" 
             alt="Yala Leopard" 
             fill 
             className="why-yala-image"
