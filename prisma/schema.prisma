@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +8,194 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth (NextAuth) ───────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(GUEST)
+  accounts      Account[]
+  sessions      Session[]
+  bookings      Booking[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum UserRole {
+  GUEST
+  STAFF
+  ADMIN
+}
+
+// ─── Property / Rooms ─────────────────────────────────────────────────────
+
+model RoomType {
+  id             String   @id @default(cuid())
+  name           String   // e.g. "Deluxe Tent", "Premium Suite"
+  description    String?
+  maxCapacity    Int
+  pricePerNight  Float
+  rooms          Room[]
+  createdAt      DateTime @default(now())
+}
+
+model Room {
+  id         String     @id @default(cuid())
+  number     String     @unique
+  roomType   RoomType   @relation(fields: [roomTypeId], references: [id])
+  roomTypeId String
+  status     RoomStatus @default(AVAILABLE)
+  bookings   Booking[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+}
+
+// ─── Bookings ─────────────────────────────────────────────────────────────
+
+model Booking {
+  id              String        @id @default(cuid())
+  ref             String        @unique  // e.g. YD-2026-0001
+  user            User?         @relation(fields: [userId], references: [id])
+  userId          String?
+
+  // Guest info (for walk-in / non-registered guests)
+  guestName       String
+  guestEmail      String
+  guestPhone      String
+  guestCountry    String
+
+  room            Room          @relation(fields: [roomId], references: [id])
+  roomId          String
+
+  checkIn         DateTime
+  checkOut        DateTime
+  nights          Int
+  adults          Int           @default(1)
+  children        Int           @default(0)
+
+  status          BookingStatus @default(PENDING)
+
+  // Financials
+  roomRevenue     Float
+  addOnRevenue    Float         @default(0)
+  totalRevenue    Float
+  currency        String        @default("USD")
+
+  addOns          BookingAddOn[]
+  safariBookings  SafariBooking[]
+
+  specialRequests String?
+  promoCode       String?
+
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+}
+
+model AddOnService {
+  id          String         @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  category    AddOnCategory
+  active      Boolean        @default(true)
+  bookings    BookingAddOn[]
+}
+
+enum AddOnCategory {
+  SAFARI
+  FOOD
+  SPA
+  TRANSPORT
+  OTHER
+}
+
+model BookingAddOn {
+  id          String       @id @default(cuid())
+  booking     Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId   String
+  addOn       AddOnService @relation(fields: [addOnId], references: [id])
+  addOnId     String
+  quantity    Int          @default(1)
+  price       Float
+}
+
+// ─── Safari Slots ─────────────────────────────────────────────────────────
+
+model SafariSlot {
+  id        String          @id @default(cuid())
+  date      DateTime
+  slotType  SafariSlotType
+  capacity  Int             @default(6)
+  guide     String?
+  bookings  SafariBooking[]
+  createdAt DateTime        @default(now())
+}
+
+enum SafariSlotType {
+  AM
+  PM
+}
+
+model SafariBooking {
+  id        String     @id @default(cuid())
+  slot      SafariSlot @relation(fields: [slotId], references: [id])
+  slotId    String
+  booking   Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId String
+  guests    Int        @default(1)
 }

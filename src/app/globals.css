@@ -5,7 +5,25 @@
   --primary-hover: #b3e64d;
   --glass-bg: rgba(16, 31, 22, 0.4);
   --glass-border: rgba(154, 205, 50, 0.2);
+
+  /* Admin Dashboard Tokens */
+  --dash-bg:        #060d09;
+  --dash-surface:   #0d1a10;
+  --dash-surface-2: #132018;
+  --dash-border:    rgba(255,255,255,0.07);
+  --dash-border-2:  rgba(255,255,255,0.12);
+  --dash-accent:    #9acd32;
+  --dash-accent-dim:rgba(154,205,50,0.12);
+  --dash-text:      #f4fdf8;
+  --dash-muted:     rgba(244,253,248,0.45);
+  --dash-danger:    #e05252;
+  --dash-warn:      #d4a017;
+  --dash-success:   #4caf72;
+  --dash-info:      #4a9fd4;
+  --dash-sidebar-w: 240px;
+  --dash-topbar-h:  60px;
 }
+
 
 @media (prefers-color-scheme: dark) {
   :root {
