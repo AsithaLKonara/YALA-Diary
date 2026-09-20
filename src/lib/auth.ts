@@ -1,12 +1,14 @@
-// src/lib/auth.ts — NextAuth v5 config (ready to wire providers)
+// src/lib/auth.ts — Node-compatible NextAuth v5 config (Prisma enabled)
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { authConfig } from "@/auth.config";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(prisma),
   providers: [
     Google({
@@ -41,17 +43,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return user;
       }
     }),
-    // Add Facebook, Apple providers here when credentials are available
   ],
   callbacks: {
-    async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (session.user as any).role = token.role ?? "GUEST";
-      }
-      return session;
-    },
+    ...authConfig.callbacks,
     async jwt({ token, user }) {
       if (user) {
         token.sub = user.id;
@@ -59,7 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = (user as any).role;
       }
       
-      // Fallback: fetch role if not present
+      // Fallback: fetch role if not present (Prisma is allowed here in Node runtime)
       if (!token.role && token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
@@ -71,9 +65,4 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
   },
-  pages: {
-    signIn: "/auth",
-    error: "/auth",
-  },
-  session: { strategy: "jwt" },
 });

@@ -1,16 +1,14 @@
-// middleware.ts — Edge-compatible NextAuth guard (JWT only, no Prisma)
-// Prisma cannot run in Edge runtime — session is validated via JWT cookie only.
-import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import NextAuth from "next-auth";
+import { authConfig } from "./auth.config";
+import { NextResponse } from "next/server";
 
-export async function middleware(req: NextRequest) {
+export const { auth: middleware } = NextAuth(authConfig);
+
+export default middleware((req) => {
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/guest")) {
-    const token = await getToken({
-      req,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+  if (pathname.startsWith("/admin") || pathname.startsWith("/guest") || pathname.startsWith("/api/admin") || pathname.startsWith("/api/guest")) {
+    const token = req.auth; // Auth.js automatically attaches the decoded JWT here!
 
     if (!token) {
       // Not authenticated
@@ -47,7 +45,7 @@ export async function middleware(req: NextRequest) {
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
   matcher: ["/admin/:path*", "/guest/:path*", "/api/admin/:path*", "/api/guest/:path*"],
