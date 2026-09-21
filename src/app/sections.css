@@ -679,6 +679,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 2rem;
 }
 
 .huge-title {
@@ -890,18 +891,13 @@
   }
   
   /* Timeline adjustments */
-  .timeline-content {
-    width: 100%;
-    padding: 0 0 0 30px;
+  .timeline-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
   }
-  .timeline-item:nth-child(even) .timeline-content {
-    left: 0;
-    text-align: left;
-  }
-  .timeline-marker {
-    left: 0;
-  }
-  .timeline-container::before {
-    left: 0;
+  .timeline-connector {
+    transform: rotate(90deg);
+    margin: 0;
   }
 }

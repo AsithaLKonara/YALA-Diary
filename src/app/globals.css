@@ -320,7 +320,7 @@ a {
   .header-actions { display: none; }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .hamburger { display: block; }
   .hamburger.active .bar:nth-child(2) { opacity: 0; }
   .hamburger.active .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }

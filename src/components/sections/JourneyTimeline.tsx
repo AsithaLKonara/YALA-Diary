@@ -19,7 +19,7 @@ export default function JourneyTimeline() {
               <h3 className="step-title">{s.title}</h3>
               <p className="step-desc">{s.desc}</p>
             </div>
-            {idx < STEPS.length - 1 && <div className="timeline-connector">↓</div>}
+            {idx < STEPS.length - 1 && <div className="timeline-connector">→</div>}
           </React.Fragment>
         ))}
       </div>
