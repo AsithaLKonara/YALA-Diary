@@ -10,7 +10,7 @@ export default function WhyYala() {
       {/* Section 1: Animation Left, Text Right */}
       <CinematicScroll 
         frameCount={147} 
-        framePath={(index) => `/frames/0921/frame_${String(index).padStart(3, '0')}.webp`} 
+        framePath={(index) => `/frames/0921_4/frame_${String(index).padStart(3, '0')}.webp`} 
         title="What is a Safari?"
         reverse={false}
       >
