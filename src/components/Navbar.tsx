@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCurrency, CurrencyCode } from "@/context/CurrencyContext";
 import { useSession, signOut } from "next-auth/react";
+import Image from "next/image";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -15,11 +16,6 @@ export default function Navbar() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const role = (session?.user as any)?.role;
-
-  // Hide navbar completely on admin and guest routes
-  if (pathname?.startsWith("/admin") || pathname?.startsWith("/guest")) {
-    return null;
-  }
 
   // Prevent scrolling when mobile menu is open
   useEffect(() => {
@@ -44,12 +40,18 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Hide navbar completely on admin and guest routes
+  if (pathname?.startsWith("/admin") || pathname?.startsWith("/guest")) {
+    return null;
+  }
+
   return (
     <header className={`site-header ${isScrolled ? "scrolled" : ""}`}>
       <div className="header-container">
         {/* Logo Group */}
-        <Link href="/" className="header-logo-group">
-          <span className="logo-main">YALA DIARY</span>
+        <Link href="/" className="header-logo-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Image src="/logo.png" alt="Yala Diary Logo" width={60} height={60} style={{ objectFit: 'contain' }} />
+          <span className="logo-main" style={{ fontSize: '1.2rem' }}>YALA DIARY</span>
         </Link>
 
         {/* Desktop Navigation */}
@@ -111,8 +113,9 @@ export default function Navbar() {
 
         {/* Mobile Menu Overlay */}
         <div className={`nav-overlay ${isOpen ? "open" : ""}`}>
-          <div className="mobile-menu-header">
-            <span className="logo-main">YALA</span>
+          <div className="mobile-menu-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Image src="/logo.png" alt="Yala Diary Logo" width={45} height={45} style={{ objectFit: 'contain' }} />
+            <span className="logo-main" style={{ fontSize: '1.2rem' }}>YALA</span>
           </div>
 
           <nav className="mobile-nav">

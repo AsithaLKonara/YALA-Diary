@@ -128,7 +128,6 @@
   background-size: cover;
   background-position: center;
   overflow: hidden;
-  group: hover;
 }
 
 .experience-overlay {
@@ -718,7 +717,7 @@
    14 - Footer
 ========================================= */
 .site-footer {
-  padding: 80px 120px 40px;
+  padding: 40px 120px 20px;
 }
 
 .footer-container {

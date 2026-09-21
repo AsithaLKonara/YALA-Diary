@@ -8,6 +8,7 @@ const IMAGES = [
   "/images/assets/deer/910ca771-6819-4df7-b9f5-5b7addfb5643.jpg",
   "/images/assets/peacock/pexels-rajukhanp-4920602.jpg",
   "/images/assets/Fox/cf2e3ecc-dd5e-49dd-bd3a-54fdbad81af0.jpg",
+  "/images/assets/leapords/3.jpg",
 ];
 
 export default function Gallery() {

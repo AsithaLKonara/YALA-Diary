@@ -16,7 +16,7 @@ export default function Footer() {
       <div style={{ position: 'relative', zIndex: 2 }}>
         <div className="footer-container">
         <div className="footer-brand">
-          <Image src="/logo.png" alt="Yala Diary Logo" width={120} height={60} className="footer-logo-img" />
+          <Image src="/logo.png" alt="Yala Diary Logo" width={240} height={120} className="footer-logo-img" style={{ maxWidth: '100%', height: 'auto' }} />
           <p className="footer-brand-desc">Wild Sri Lanka, Unfiltered. Experience the apex predators in their natural habitat.</p>
         </div>
         

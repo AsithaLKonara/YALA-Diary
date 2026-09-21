@@ -134,13 +134,12 @@ function Step1({ data, updateData, next, setAvailableRooms }: any) {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to fetch availability");
       
-      // Inject some mock images/features based on name for now
       const roomsWithAssets = json.available.map((r: any) => {
         let img = "/images/assets/hero/pexels-gottapics-17892001.jpg";
         if (r.roomTypeName.toLowerCase().includes("tent")) img = "/images/assets/hero/2147a00f-f329-4e74-8661-98ef719e1f42.jpg";
         return {
           ...r,
-          id: r.ratePlanId, // Use rate plan as unique selection
+          id: r.ratePlanId,
           name: `${r.roomTypeName} (${r.ratePlanName})`,
           img,
           features: ["Queen Bed", "En-suite Bathroom", "Jungle View"]
@@ -166,23 +165,6 @@ function Step1({ data, updateData, next, setAvailableRooms }: any) {
           <div className="input-with-icon">
             <MapPin size={18} className="input-icon" />
             <input type="text" className="form-input" value="Yala National Park" disabled style={{ opacity: 0.7 }} />
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Hotel</label>
-          <div className="input-with-icon">
-            <ChevronDown size={18} className="input-icon" style={{ left: 'auto', right: '16px' }} />
-            <select 
-              className="form-input" 
-              value={data.hotel} 
-              onChange={(e) => updateData({ hotel: e.target.value })}
-              style={{ appearance: 'none' }}
-            >
-              <option value="Yala Diary">Yala Diary</option>
-              <option value="Mahoora by Eco Team Yala">Mahoora by Eco Team Yala</option>
-              <option value="Wild Coast Tented Lodge">Wild Coast Tented Lodge</option>
-            </select>
           </div>
         </div>
 
@@ -257,24 +239,48 @@ function Step1({ data, updateData, next, setAvailableRooms }: any) {
 // -----------------------------------------------------------------------------
 // STEP 2: Select Room
 // -----------------------------------------------------------------------------
-function Step2({ data, updateData, next, back, availableRooms }: any) {
+function Step2({ data, updateData, next, back, availableRooms, setAvailableRooms }: any) {
   const { formatPrice } = useCurrency();
   const [loading, setLoading] = useState<string | null>(null);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleSearch = async () => {
+    setSearchLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/booking/availability?checkIn=${data.checkIn}&checkOut=${data.checkOut}&adults=${data.adults}&children=${data.children}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to fetch availability");
+      
+      const roomsWithAssets = json.available.map((r: any) => {
+        let img = "/images/assets/hero/pexels-gottapics-17892001.jpg";
+        if (r.roomTypeName.toLowerCase().includes("tent")) img = "/images/assets/hero/2147a00f-f329-4e74-8661-98ef719e1f42.jpg";
+        return {
+          ...r,
+          id: r.ratePlanId,
+          name: `${r.roomTypeName} (${r.ratePlanName})`,
+          img,
+          features: ["Queen Bed", "En-suite Bathroom", "Jungle View"]
+        };
+      });
+
+      setAvailableRooms(roomsWithAssets);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   const handleSelect = async (r: Room) => {
     setLoading(r.id);
     setError("");
     try {
-      // Revalidate Availability
-      // Note: In real app, we need the external IDs to pass to revalidate, 
-      // which we should ensure our API returns. For now we use the internal IDs 
-      // or mock the call if external IDs are missing.
       const res = await fetch("/api/booking/revalidate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          // Currently our search API returns internal IDs, but let's assume it maps to external for this sandbox
           hotelExternalId: "SM-HOTEL-01", 
           roomTypeExternalId: r.roomTypeId,
           ratePlanExternalId: r.ratePlanId,
@@ -299,47 +305,138 @@ function Step2({ data, updateData, next, back, availableRooms }: any) {
   };
 
   return (
-    <div className="booking-panel">
-      <h2 className="booking-title">Select Your Accommodation</h2>
-      {availableRooms.length === 0 ? (
-        <div style={{ padding: 40, textAlign: "center", background: "rgba(255,255,255,0.05)", borderRadius: 12 }}>
-          <p>No rooms available for these dates and guest counts.</p>
-          <button className="btn-secondary" onClick={back} style={{ marginTop: 20 }}>Change Dates</button>
-        </div>
-      ) : (
-        <div className="room-grid">
-          {availableRooms.map((r: any) => (
-            <div key={r.id} className="room-card">
-              <div className="room-img-wrap">
-                <Image src={r.img} alt={r.name} fill style={{ objectFit: 'cover' }} />
-              </div>
-              <div className="room-info">
-                <h3 style={{ fontSize: '1.5rem', marginBottom: 10 }}>{r.name}</h3>
-                <div className="room-features">
-                  {r.features.map((f: string, i: number) => <span key={i} className="room-feature"><Check size={14} color="var(--primary)"/> {f}</span>)}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', marginTop: 10 }}>
-                  {r.availableRooms} rooms left
-                </div>
-                <div className="room-price">{formatPrice(r.pricePerNight)} <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>/ night</span></div>
-                <button 
-                  className="btn-primary" 
-                  style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center' }} 
-                  onClick={() => handleSelect(r)}
-                  disabled={loading === r.id}
-                >
-                  {loading === r.id && <Loader2 size={16} className="spinner" />}
-                  {loading === r.id ? "Validating..." : "Select Room"}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="booking-panel booking-sidebar-layout">
       
-      {error && <div style={{ color: "var(--dash-danger)", marginTop: 20, textAlign: "center" }}>{error}</div>}
-      <div className="booking-actions" style={{ justifyContent: 'flex-start' }}>
-        <button className="btn-secondary" onClick={back}>← Back</button>
+      {/* Sidebar Filters */}
+      <div className="booking-sidebar">
+        <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', fontWeight: 600 }}>Filters</h3>
+        
+        <div className="form-group">
+          <label className="form-label">Place</label>
+          <div className="input-with-icon">
+            <MapPin size={16} className="input-icon" />
+            <input type="text" className="form-input" value="Yala National Park" disabled style={{ opacity: 0.7, paddingLeft: 40, fontSize: '0.9rem' }} />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Hotel</label>
+          <div className="input-with-icon">
+            <ChevronDown size={16} className="input-icon" style={{ left: 'auto', right: '12px' }} />
+            <select 
+              className="form-input" 
+              value={data.hotel} 
+              onChange={(e) => updateData({ hotel: e.target.value })}
+              style={{ appearance: 'none', paddingLeft: 12, fontSize: '0.9rem' }}
+            >
+              <option value="Yala Diary">Yala Diary</option>
+              <option value="Mahoora by Eco Team Yala">Mahoora by Eco Team Yala</option>
+              <option value="Wild Coast Tented Lodge">Wild Coast Tented Lodge</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Check In</label>
+          <input 
+            type="date" 
+            className="form-input" 
+            value={data.checkIn} 
+            onChange={(e) => updateData({ checkIn: e.target.value })}
+            style={{ fontSize: '0.9rem' }}
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Check Out</label>
+          <input 
+            type="date" 
+            className="form-input" 
+            value={data.checkOut} 
+            onChange={(e) => updateData({ checkOut: e.target.value })}
+            style={{ fontSize: '0.9rem' }}
+          />
+        </div>
+        
+        <h4 style={{ fontSize: '1rem', marginTop: '20px', marginBottom: '10px', color: 'rgba(255,255,255,0.8)' }}>Room Requirements</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div className="form-group">
+            <label className="form-label" style={{ fontSize: '0.8rem' }}>Adults</label>
+            <input 
+              type="number" 
+              min="1" 
+              className="form-input" 
+              value={data.adults} 
+              onChange={(e) => updateData({ adults: parseInt(e.target.value) || 1 })}
+              style={{ fontSize: '0.9rem' }}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label" style={{ fontSize: '0.8rem' }}>Children</label>
+            <input 
+              type="number" 
+              min="0" 
+              className="form-input" 
+              value={data.children} 
+              onChange={(e) => updateData({ children: parseInt(e.target.value) || 0 })}
+              style={{ fontSize: '0.9rem' }}
+            />
+          </div>
+        </div>
+
+        <button className="btn-primary" onClick={handleSearch} disabled={searchLoading} style={{ width: '100%', marginTop: '20px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+          {searchLoading && <Loader2 size={16} className="spinner" />}
+          Update Search
+        </button>
+        
+        <div style={{ marginTop: '20px' }}>
+           <button className="btn-secondary" onClick={back} style={{ width: '100%', padding: '10px' }}>← Back to step 1</button>
+        </div>
+      </div>
+
+      {/* Main Content (Rooms Grid) */}
+      <div className="booking-main-content">
+        <h2 className="booking-title" style={{ marginTop: 0 }}>Select Your Accommodation</h2>
+        {error && <div style={{ color: "var(--dash-danger)", marginBottom: 20 }}>{error}</div>}
+        
+        {availableRooms.length === 0 && !searchLoading ? (
+          <div style={{ padding: 40, textAlign: "center", background: "rgba(255,255,255,0.05)", borderRadius: 12 }}>
+            <p>No rooms available for these dates and guest counts.</p>
+          </div>
+        ) : searchLoading ? (
+           <div style={{ padding: 40, textAlign: "center" }}>
+             <Loader2 size={32} className="spinner" style={{ margin: '0 auto', color: 'var(--primary)' }} />
+           </div>
+        ) : (
+          <div className="room-grid">
+            {availableRooms.map((r: any) => (
+              <div key={r.id} className="room-card">
+                <div className="room-img-wrap">
+                  <Image src={r.img} alt={r.name} fill style={{ objectFit: 'cover' }} />
+                </div>
+                <div className="room-info">
+                  <h3 style={{ fontSize: '1.5rem', marginBottom: 10 }}>{r.name}</h3>
+                  <div className="room-features">
+                    {r.features.map((f: string, i: number) => <span key={i} className="room-feature"><Check size={14} color="var(--primary)"/> {f}</span>)}
+                  </div>
+                  <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', marginTop: 10 }}>
+                    {r.availableRooms} rooms left
+                  </div>
+                  <div className="room-price">{formatPrice(r.pricePerNight)} <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>/ night</span></div>
+                  <button 
+                    className="btn-primary" 
+                    style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center' }} 
+                    onClick={() => handleSelect(r)}
+                    disabled={loading === r.id}
+                  >
+                    {loading === r.id && <Loader2 size={16} className="spinner" />}
+                    {loading === r.id ? "Validating..." : "Select Room"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

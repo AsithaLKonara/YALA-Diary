@@ -369,3 +369,36 @@
     width: 100%;
   }
 }
+
+/* Sidebar Layout for Step 2 */
+.booking-sidebar-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+.booking-sidebar {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 24px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 100px;
+}
+
+.booking-main-content {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 900px) {
+  .booking-sidebar-layout {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .booking-sidebar {
+    position: relative;
+    top: 0;
+  }
+}
