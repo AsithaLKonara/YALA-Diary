@@ -7,6 +7,7 @@ import { useCurrency } from "@/context/CurrencyContext";
 import { useSession } from "next-auth/react";
 import { calculateSafariPrice, getDisplayMinPrice, getDisplayMinPriceLabel, calculateServicePrice } from "@/lib/pricing";
 import type { SafariPricingRules, ServicePricingOptions } from "@/lib/pricing";
+import CustomDatePicker from "@/components/ui/CustomDatePicker";
 
 interface ExtraService {
   id: string;
@@ -146,28 +147,20 @@ function Step1({ data, updateData, next }: any) {
 
         <div className="form-group">
           <label className="form-label">Check In / Safari Date</label>
-          <div className="input-with-icon">
-            <Calendar size={18} className="input-icon" />
-            <input 
-              type="date" 
-              className="form-input" 
-              value={data.checkIn} 
-              onChange={(e) => updateData({ checkIn: e.target.value })}
-            />
-          </div>
+          <CustomDatePicker 
+            value={data.checkIn} 
+            onChange={(val) => updateData({ checkIn: val })} 
+            placeholder="Select Safari Date"
+          />
         </div>
 
         <div className="form-group">
           <label className="form-label">Check Out</label>
-          <div className="input-with-icon">
-            <Calendar size={18} className="input-icon" />
-            <input 
-              type="date" 
-              className="form-input" 
-              value={data.checkOut} 
-              onChange={(e) => updateData({ checkOut: e.target.value })}
-            />
-          </div>
+          <CustomDatePicker 
+            value={data.checkOut} 
+            onChange={(val) => updateData({ checkOut: val })} 
+            placeholder="Select Checkout Date"
+          />
         </div>
       </div>
 
@@ -261,8 +254,11 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
 
         <div className="form-group">
           <label className="form-label">Safari Date</label>
-          <input type="date" className="form-input" value={data.checkIn}
-            onChange={(e) => updateData({ checkIn: e.target.value })} style={{ fontSize: '0.9rem' }} />
+          <CustomDatePicker 
+            value={data.checkIn} 
+            onChange={(val) => updateData({ checkIn: val })} 
+            placeholder="Select Safari Date"
+          />
         </div>
 
         <h4 style={{ fontSize: '1rem', marginTop: '20px', marginBottom: '10px', color: 'rgba(255,255,255,0.8)' }}>Guests</h4>
