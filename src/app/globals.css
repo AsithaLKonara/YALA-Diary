@@ -310,17 +310,17 @@ a {
   display: none;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1309px) {
   .site-header { padding: 1rem 20px; }
   .nav-book-btn { padding: 8px 16px; font-size: 0.75rem; }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1309px) {
   .desktop-nav { display: none; }
   .header-actions { display: none; }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1309px) {
   .hamburger { display: block; }
   .hamburger.active .bar:nth-child(2) { opacity: 0; }
   .hamburger.active .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
