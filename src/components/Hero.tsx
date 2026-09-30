@@ -88,7 +88,7 @@ export default function Hero() {
             className="hero-ctas"
           >
             <Link href="/book" className="cta-primary glass-btn">Book Your Safari</Link>
-            <button className="cta-secondary glass-btn-outline">Explore Yala</button>
+            <Link href="/explore" className="cta-secondary glass-btn-outline">Explore Yala</Link>
           </motion.div>
         </div>
 
