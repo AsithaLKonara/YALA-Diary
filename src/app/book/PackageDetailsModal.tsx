@@ -1,14 +1,14 @@
 import React from 'react';
 import Image from 'next/image';
 import { X, CheckCircle, Clock, CalendarDays } from 'lucide-react';
-import { SafariPackage } from '@prisma/client';
+
 
 export default function PackageDetailsModal({ 
   pkg, 
   onClose,
   onSelect 
 }: { 
-  pkg: SafariPackage; 
+  pkg: any; 
   onClose: () => void;
   onSelect: () => void;
 }) {

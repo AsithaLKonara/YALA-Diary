@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCurrency, CurrencyCode } from "@/context/CurrencyContext";
+import { useCurrency } from "@/context/CurrencyContext";
+import { CurrencyCode } from "@/lib/currency";
 import { useSession, signOut } from "next-auth/react";
 import Image from "next/image";
 
@@ -50,7 +51,7 @@ export default function Navbar() {
       <div className="header-container">
         {/* Logo Group */}
         <Link href="/" className="header-logo-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Image src="/logo.png" alt="Yala Diary Logo" width={60} height={60} priority style={{ objectFit: 'contain' }} />
+          <Image src="/logo.png" alt="Yala Diary Logo" width={60} height={60} priority style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
           <span className="logo-main" style={{ fontSize: '1.2rem' }}>YALA DIARY</span>
         </Link>
 
@@ -114,7 +115,7 @@ export default function Navbar() {
         {/* Mobile Menu Overlay */}
         <div className={`nav-overlay ${isOpen ? "open" : ""}`}>
           <div className="mobile-menu-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Image src="/logo.png" alt="Yala Diary Logo" width={45} height={45} priority style={{ objectFit: 'contain' }} />
+            <Image src="/logo.png" alt="Yala Diary Logo" width={45} height={45} priority style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
             <span className="logo-main" style={{ fontSize: '1.2rem' }}>YALA</span>
           </div>
 

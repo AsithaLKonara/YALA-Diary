@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { SiteMinderClient } from "@/modules/connectivity/providers/siteminder/client";
 import { randomUUID } from "crypto";
-
 import { calculateSafariPrice, calculateServicePrice } from "@/lib/pricing";
-import { RATES } from "@/lib/currency";
+import { stripe } from "@/lib/stripe";
 
 export async function POST(req: Request) {
   try {
@@ -48,6 +46,9 @@ export async function POST(req: Request) {
     const ref = `YD-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
     const bookingAttemptId = randomUUID(); // Idempotency key
 
+    let booking;
+    let productName = "Yala Diary Booking";
+
     if (isSafariOnly) {
       if (!safariPackageId) return NextResponse.json({ error: "Missing Safari Package ID" }, { status: 400 });
       
@@ -62,8 +63,9 @@ export async function POST(req: Request) {
         calculatedSafariPrice = pkg.pricingType === "PER_PERSON" ? pkg.basePrice * (adults + children) : pkg.basePrice;
       }
       const totalRev = calculatedSafariPrice + addOnRevenue;
+      productName = `Safari Package - ${pkg.name}`;
 
-      let booking = await prisma.booking.create({
+      booking = await prisma.booking.create({
         data: {
           ref,
           bookingAttemptId,
@@ -81,8 +83,8 @@ export async function POST(req: Request) {
           roomRevenue: calculatedSafariPrice, // Treat safari price as base room revenue
           addOnRevenue,
           totalRevenue: totalRev,
-          status: "CONFIRMED",
-          paymentStatus: "PAID",
+          status: "PENDING_PAYMENT",
+          paymentStatus: "UNPAID",
           serviceBookings: {
             create: addOnRecords
           },
@@ -101,134 +103,99 @@ export async function POST(req: Request) {
       });
 
       await prisma.bookingEvent.create({
-        data: { bookingId: booking.id, status: "CONFIRMED", action: "SAFARI_BOOKING_CREATED", metadata: { attemptId: bookingAttemptId } }
+        data: { bookingId: booking.id, status: "PENDING_PAYMENT", action: "SAFARI_BOOKING_CREATED", metadata: { attemptId: bookingAttemptId } }
+      });
+    } else {
+      // Hotel Logic
+      if (!hotelId || !roomTypeId) {
+        return NextResponse.json({ error: "Missing hotel or room type ID" }, { status: 400 });
+      }
+
+      const hotel = await prisma.hotel.findUnique({ where: { id: hotelId }});
+      if (!hotel || !hotel.externalId) {
+        return NextResponse.json({ error: "Invalid hotel or missing provider mapping" }, { status: 400 });
+      }
+
+      const roomType = await prisma.roomType.findUnique({ where: { id: roomTypeId }});
+      const ratePlan = ratePlanId ? await prisma.ratePlan.findUnique({ where: { id: ratePlanId }}) : null;
+      if (!roomType || !roomType.externalId) return NextResponse.json({ error: "Invalid room type" }, { status: 400 });
+
+      const roomRevenue = price || (roomType.pricePerNight * nights); 
+      const totalRevenue = roomRevenue + addOnRevenue;
+      productName = `Hotel Booking - ${hotel.name} (${roomType.name})`;
+
+      booking = await prisma.booking.create({
+        data: {
+          ref,
+          bookingAttemptId,
+          hotelId: hotel.id,
+          userId: userId || null,
+          guestName: guest.name,
+          guestEmail: guest.email,
+          guestPhone: guest.phone || "",
+          guestCountry: guest.country || "Unknown",
+          specialRequests: guest.requests || "",
+          checkIn: checkInDate,
+          checkOut: checkOutDate,
+          nights,
+          adults,
+          children,
+          roomTypeId,
+          ratePlanId,
+          roomRevenue,
+          addOnRevenue,
+          totalRevenue,
+          status: "PENDING_PAYMENT",
+          paymentStatus: "UNPAID",
+          serviceBookings: {
+            create: addOnRecords
+          }
+        }
       });
 
+      await prisma.bookingEvent.create({
+        data: { bookingId: booking.id, status: "PENDING_PAYMENT", action: "BOOKING_CREATED", metadata: { attemptId: bookingAttemptId } }
+      });
+    }
+
+    // Create Stripe Checkout Session
+    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    
+    // For zero total revenue, just confirm immediately
+    if (booking.totalRevenue <= 0) {
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: "CONFIRMED", paymentStatus: "PAID" }
+      });
+      // Webhook won't fire, so we could send email here if we want, but for now we'll assume there is always a price.
       return NextResponse.json({ success: true, booking }, { status: 201 });
     }
 
-    // --- Original Hotel Logic ---
-    if (!hotelId || !roomTypeId) {
-      return NextResponse.json({ error: "Missing hotel or room type ID" }, { status: 400 });
-    }
-
-    // Validate hotel and rate plan
-    const hotel = await prisma.hotel.findUnique({ where: { id: hotelId }});
-    if (!hotel || !hotel.externalId) {
-      return NextResponse.json({ error: "Invalid hotel or missing provider mapping" }, { status: 400 });
-    }
-
-    const roomType = await prisma.roomType.findUnique({ where: { id: roomTypeId }});
-    const ratePlan = ratePlanId ? await prisma.ratePlan.findUnique({ where: { id: ratePlanId }}) : null;
-    if (!roomType || !roomType.externalId) return NextResponse.json({ error: "Invalid room type" }, { status: 400 });
-
-    const roomRevenue = price || (roomType.pricePerNight * nights); 
-    const totalRevenue = roomRevenue + addOnRevenue;
-
-    // 1. Create booking in DRAFT state
-    let booking = await prisma.booking.create({
-      data: {
-        ref,
-        bookingAttemptId,
-        hotelId: hotel.id,
-        userId: userId || null,
-        guestName: guest.name,
-        guestEmail: guest.email,
-        guestPhone: guest.phone || "",
-        guestCountry: guest.country || "Unknown",
-        specialRequests: guest.requests || "",
-        checkIn: checkInDate,
-        checkOut: checkOutDate,
-        nights,
-        adults,
-        children,
-        roomTypeId,
-        ratePlanId,
-        roomRevenue,
-        addOnRevenue,
-        totalRevenue,
-        status: "DRAFT",
-        paymentStatus: "UNPAID",
-        serviceBookings: {
-          create: addOnRecords
-        }
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: productName,
+            },
+            unit_amount: Math.round(booking.totalRevenue * 100),
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${origin}/book/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/book`,
+      client_reference_id: booking.id,
+      metadata: {
+        bookingId: booking.id,
+        isSafariOnly: isSafariOnly ? 'true' : 'false'
       }
     });
 
-    await prisma.bookingEvent.create({
-      data: { bookingId: booking.id, status: "DRAFT", action: "BOOKING_CREATED", metadata: { attemptId: bookingAttemptId } }
-    });
-
-    // 2. Simulate Payment Success (in real app, this happens in a webhook)
-    booking = await prisma.booking.update({
-      where: { id: booking.id },
-      data: { status: "PAYMENT_SUCCESS", paymentStatus: "PAID" }
-    });
-    
-    await prisma.bookingEvent.create({
-      data: { bookingId: booking.id, status: "PAYMENT_SUCCESS", action: "PAYMENT_PROCESSED" }
-    });
-
-    // 3. Create Reservation on Provider
-    booking = await prisma.booking.update({
-      where: { id: booking.id },
-      data: { status: "CREATING_RESERVATION" }
-    });
-    
-    await prisma.bookingEvent.create({
-      data: { bookingId: booking.id, status: "CREATING_RESERVATION", action: "SITEMINDER_SYNC_START" }
-    });
-
-    try {
-      const client = new SiteMinderClient();
-      const reservation = await client.createReservation({
-        hotelId: hotel.externalId,
-        roomTypeId: roomType.externalId,
-        ratePlanId: ratePlan?.externalId || "UNKNOWN",
-        checkIn,
-        checkOut,
-        guest,
-        price: { amount: roomRevenue, currency: "USD" }
-      });
-
-      // 4. Success -> CONFIRMED
-      booking = await prisma.booking.update({
-        where: { id: booking.id },
-        data: { 
-          status: "CONFIRMED", 
-          externalReservationId: reservation.id 
-        }
-      });
-      
-      await prisma.bookingEvent.create({
-        data: { 
-          bookingId: booking.id, 
-          status: "CONFIRMED", 
-          action: "SITEMINDER_SYNC_SUCCESS", 
-          metadata: { externalId: reservation.id } 
-        }
-      });
-
-    } catch (providerError: any) {
-      // 5. Failure -> FAILED
-      booking = await prisma.booking.update({
-        where: { id: booking.id },
-        data: { status: "FAILED" }
-      });
-
-      await prisma.bookingEvent.create({
-        data: { 
-          bookingId: booking.id, 
-          status: "FAILED", 
-          action: "SITEMINDER_SYNC_FAILED", 
-          metadata: { error: providerError.message || "Unknown error" } 
-        }
-      });
-
-      return NextResponse.json({ error: "Booking saved but failed to sync to provider. Support will contact you." }, { status: 502 });
-    }
-
-    return NextResponse.json({ success: true, booking }, { status: 201 });
+    return NextResponse.json({ success: true, checkoutUrl: session.url }, { status: 201 });
   } catch (error) {
     console.error("Create booking error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -885,7 +885,12 @@ function Step5({ data, updateData, back, next }: any) {
       const res = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to create booking");
-      next();
+      
+      if (json.checkoutUrl) {
+        window.location.href = json.checkoutUrl;
+      } else {
+        next();
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

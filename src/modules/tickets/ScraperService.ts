@@ -28,7 +28,7 @@ export class ScraperService {
       const regex = /(Block\s+[\d&]+\s*\([\w\s]+\))\s*-\s*(Half-day|Full-day)[\s\S]{0,50}?LKR\s*([\d,]+)/gi;
       
       let match;
-      const prices = [];
+      const prices: any[] = [];
       
       while ((match = regex.exec(textContent)) !== null) {
         const blockName = match[1].trim();
