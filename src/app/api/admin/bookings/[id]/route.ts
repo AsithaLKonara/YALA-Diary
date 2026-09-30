@@ -45,7 +45,8 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
       include: {
         safariBookings: {
           include: {
-            package: true
+            package: true,
+            entranceTicket: true
           }
         },
         serviceBookings: {

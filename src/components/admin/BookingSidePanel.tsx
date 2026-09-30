@@ -36,6 +36,12 @@ interface FullBooking {
     date: string;
     guests: number;
     entranceTicketType?: string;
+    entranceTicketPrice?: number;
+    entranceTicket?: {
+      name: string;
+      adultPrice: number;
+      childPrice: number;
+    };
     package: {
       name: string;
       type: string;
@@ -236,6 +242,15 @@ export default function BookingSidePanel({ bookingId, onClose, onStatusChange }:
                           Tickets: <span style={{ color: sb.entranceTicketType === 'COMPANY_PROVIDED' ? 'var(--primary)' : '#fff' }}>
                             {sb.entranceTicketType === 'COMPANY_PROVIDED' ? 'Arranged by Company' : 'Self Arranged'}
                           </span>
+                          {sb.entranceTicketType === 'COMPANY_PROVIDED' && sb.entranceTicket && (
+                            <div style={{ marginTop: 6, padding: "8px", background: "rgba(0,0,0,0.2)", borderRadius: 4, border: "1px solid rgba(255,255,255,0.05)" }}>
+                              <div style={{ color: "#fff", marginBottom: 2 }}>{sb.entranceTicket.name}</div>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span>LKR {sb.entranceTicket.adultPrice} (Adult) / LKR {sb.entranceTicket.childPrice} (Child)</span>
+                                <span style={{ color: "var(--primary)", fontWeight: 600 }}>Total: LKR {sb.entranceTicketPrice?.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

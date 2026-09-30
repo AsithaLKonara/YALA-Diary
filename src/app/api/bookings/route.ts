@@ -62,7 +62,9 @@ export async function POST(req: Request) {
       } else {
         calculatedSafariPrice = pkg.pricingType === "PER_PERSON" ? pkg.basePrice * (adults + children) : pkg.basePrice;
       }
-      const totalRev = calculatedSafariPrice + addOnRevenue;
+      const ticketRevenue = (entranceTicketType === 'COMPANY_PROVIDED' && entranceTicketPrice) ? entranceTicketPrice : 0;
+      const totalRev = calculatedSafariPrice + addOnRevenue + ticketRevenue;
+      const finalAddOnRevenue = addOnRevenue + ticketRevenue;
       productName = `Safari Package - ${pkg.name}`;
 
       booking = await prisma.booking.create({
@@ -81,7 +83,7 @@ export async function POST(req: Request) {
           adults,
           children,
           roomRevenue: calculatedSafariPrice, // Treat safari price as base room revenue
-          addOnRevenue,
+          addOnRevenue: finalAddOnRevenue,
           totalRevenue: totalRev,
           status: "PENDING_PAYMENT",
           paymentStatus: "UNPAID",
