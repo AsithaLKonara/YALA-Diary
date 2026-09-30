@@ -3,13 +3,15 @@ import { prisma } from "@/lib/prisma";
 import { SiteMinderClient } from "@/modules/connectivity/providers/siteminder/client";
 import { randomUUID } from "crypto";
 
+import { calculateSafariPrice, calculateServicePrice } from "@/lib/pricing";
+
 export async function POST(req: Request) {
   try {
     const data = await req.json();
     const { 
       isSafariOnly, safariPackageId, 
       hotelId, checkIn, checkOut, adults, children, roomTypeId, ratePlanId, 
-      addons, guest, userId, price 
+      addons, guest, userId, price, pricingSnapshot
     } = data;
 
     if (!checkIn || !checkOut || !guest || !guest.name || !guest.email) {
@@ -28,7 +30,13 @@ export async function POST(req: Request) {
         const addonId = typeof addon === 'string' ? addon : addon.id;
         const addonService = await prisma.extraService.findUnique({ where: { id: addonId }});
         if (addonService) {
-          const cost = addonService.pricingModel === "PER_PERSON" ? addonService.basePrice * (adults + children) : addonService.basePrice;
+          let cost = 0;
+          if (addonService.pricingOptions) {
+            const res = calculateServicePrice(addonService.pricingOptions as any, adults, children, addon.selectedOptions);
+            cost = res.valid ? res.totalPrice : 0;
+          } else {
+            cost = addonService.pricingModel === "PER_PERSON" ? addonService.basePrice * (adults + children) : addonService.basePrice;
+          }
           addOnRevenue += cost;
           addOnRecords.push({ serviceId: addonService.id, quantity: 1, totalPrice: cost });
         }
@@ -44,7 +52,14 @@ export async function POST(req: Request) {
       const pkg = await prisma.safariPackage.findUnique({ where: { id: safariPackageId } });
       if (!pkg) return NextResponse.json({ error: "Invalid Safari Package" }, { status: 400 });
 
-      const calculatedSafariPrice = pkg.pricingType === "PER_PERSON" ? pkg.basePrice * (adults + children) : pkg.basePrice;
+      let calculatedSafariPrice = 0;
+      if (pkg.pricingRules) {
+        const res = calculateSafariPrice(pkg.pricingRules as any, adults, children);
+        calculatedSafariPrice = res.valid ? res.totalPrice : 0;
+      } else {
+        calculatedSafariPrice = pkg.pricingType === "PER_PERSON" ? pkg.basePrice * (adults + children) : pkg.basePrice;
+      }
+      
       const totalRev = calculatedSafariPrice + addOnRevenue;
 
       let booking = await prisma.booking.create({
@@ -75,6 +90,9 @@ export async function POST(req: Request) {
               packageId: safariPackageId,
               date: checkInDate,
               guests: adults + children,
+              adultsCount: adults,
+              childrenCount: children,
+              pricingSnapshot: data.pricingSnapshot || null,
             }
           }
         }

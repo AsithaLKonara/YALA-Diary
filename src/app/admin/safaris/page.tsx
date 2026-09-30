@@ -6,6 +6,7 @@ import { Loader2, Edit2, Trash2 } from "lucide-react";
 import NewPackagePanel from "@/components/admin/NewPackagePanel";
 import NewExtraServicePanel from "@/components/admin/NewExtraServicePanel";
 import CustomConfirmDialog from "@/components/admin/CustomConfirmDialog";
+import { getDisplayMinPrice, getDisplayMinPriceLabel, ServicePricingOptions } from "@/lib/pricing";
 
 export default function PackagesPage() {
   const [activeTab, setActiveTab] = useState("packages");
@@ -169,7 +170,10 @@ export default function PackagesPage() {
                   </div>
 
                   <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--dash-text)', marginTop: '8px' }}>
-                    ${pkg.basePrice.toFixed(2)} <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--dash-muted)' }}>/ {pkg.pricingType === 'PER_PERSON' ? 'person' : 'jeep'}</span>
+                    ${pkg.pricingRules ? getDisplayMinPrice(pkg.pricingRules).toFixed(2) : pkg.basePrice.toFixed(2)} 
+                    <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--dash-muted)' }}>
+                      {pkg.pricingRules ? getDisplayMinPriceLabel(pkg.pricingRules) : `/ ${pkg.pricingType === 'PER_PERSON' ? 'person' : 'jeep'}`}
+                    </span>
                   </div>
 
                   {pkg.inclusions.length > 0 && (
@@ -229,12 +233,39 @@ export default function PackagesPage() {
                   </div>
 
                   <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--dash-text)', marginTop: '8px' }}>
-                    ${srv.basePrice.toFixed(2)} <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--dash-muted)' }}>
-                      {srv.pricingModel === 'PER_PERSON' ? '/ person' : srv.pricingModel === 'PER_KM' ? '+ / km' : 'flat'}
+                    ${(() => {
+                      if (srv.pricingOptions) {
+                        const opts = srv.pricingOptions as ServicePricingOptions;
+                        if (opts.strategyType === 'FLAT') return opts.flatPrice?.toFixed(2);
+                        if (opts.strategyType === 'PER_PERSON') return opts.adultRate?.toFixed(2);
+                        if (opts.strategyType === 'PER_KM') return opts.baseRate?.toFixed(2);
+                        if (opts.strategyType === 'TIERED_OPTIONS') {
+                          const tiers = opts.tiers ?? [];
+                          return tiers.length > 0 ? Math.min(...tiers.map(t => t.price)).toFixed(2) : "0.00";
+                        }
+                      }
+                      return srv.basePrice.toFixed(2);
+                    })()} 
+                    <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--dash-muted)', marginLeft: 4 }}>
+                      {(() => {
+                        if (srv.pricingOptions) {
+                          const opts = srv.pricingOptions as ServicePricingOptions;
+                          if (opts.strategyType === 'FLAT') return 'flat rate';
+                          if (opts.strategyType === 'PER_PERSON') return '/ adult';
+                          if (opts.strategyType === 'PER_KM') return 'base + / km';
+                          if (opts.strategyType === 'TIERED_OPTIONS') return 'from (tiered options)';
+                        }
+                        return srv.pricingModel === 'PER_PERSON' ? '/ person' : srv.pricingModel === 'PER_KM' ? '+ / km' : 'flat';
+                      })()}
                     </span>
                   </div>
                   
-                  {srv.pricingModel === 'PER_KM' && (
+                  {srv.pricingOptions?.strategyType === 'PER_KM' && (
+                    <div style={{ fontSize: '0.85rem', color: 'var(--dash-text)' }}>
+                      Per KM Rate: ${srv.pricingOptions.perKmRate?.toFixed(2)}
+                    </div>
+                  )}
+                  {!srv.pricingOptions && srv.pricingModel === 'PER_KM' && (
                     <div style={{ fontSize: '0.85rem', color: 'var(--dash-text)' }}>
                       Per KM Rate: ${srv.perKmRate?.toFixed(2)}
                     </div>

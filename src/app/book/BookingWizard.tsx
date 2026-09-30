@@ -5,6 +5,8 @@ import Image from "next/image";
 import { Calendar, MapPin, Users, ChevronDown, Check, Loader2, Info } from "lucide-react";
 import { useCurrency } from "@/context/CurrencyContext";
 import { useSession } from "next-auth/react";
+import { calculateSafariPrice, getDisplayMinPrice, getDisplayMinPriceLabel, calculateServicePrice } from "@/lib/pricing";
+import type { SafariPricingRules, ServicePricingOptions } from "@/lib/pricing";
 
 interface ExtraService {
   id: string;
@@ -215,71 +217,75 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
   const [loading, setLoading] = useState<string | null>(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState("");
+  const [expandedPricing, setExpandedPricing] = useState<string | null>(null);
 
   useEffect(() => {
     if (availablePackages.length === 0) {
       setSearchLoading(true);
       fetch("/api/booking/packages")
         .then(res => res.json())
-        .then(json => {
-          if (json.packages) setAvailablePackages(json.packages);
-        })
-        .catch(err => setError("Failed to load packages."))
+        .then(json => { if (json.packages) setAvailablePackages(json.packages); })
+        .catch(() => setError("Failed to load packages."))
         .finally(() => setSearchLoading(false));
     }
   }, [availablePackages.length, setAvailablePackages]);
 
   const handleSelect = (pkg: SafariPackage) => {
-    updateData({ safariPackage: pkg, addons: [] }); // Reset addons on package change
+    updateData({ safariPackage: pkg, addons: [] });
     next();
+  };
+
+  // Calculate price for a package based on current guest count
+  const getPriceInfo = (pkg: any) => {
+    const rules = pkg.pricingRules as any;
+    if (!rules) {
+      // Fallback to legacy
+      const price = pkg.pricingType === "PER_PERSON"
+        ? pkg.basePrice * (data.adults + data.children)
+        : pkg.basePrice;
+      return { 
+        totalPrice: price, 
+        lines: [{ label: pkg.pricingType === "PER_PERSON" ? `${data.adults + data.children} guests × $${pkg.basePrice}` : "Flat jeep rate", amount: price }], 
+        valid: true, 
+        validationError: undefined 
+      };
+    }
+    return calculateSafariPrice(rules, data.adults, data.children);
   };
 
   return (
     <div className="booking-panel booking-sidebar-layout">
-      
-      {/* Sidebar Filters */}
+      {/* Sidebar */}
       <div className="booking-sidebar">
         <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', fontWeight: 600 }}>Your Details</h3>
-        
+
         <div className="form-group">
           <label className="form-label">Safari Date</label>
-          <input 
-            type="date" 
-            className="form-input" 
-            value={data.checkIn} 
-            onChange={(e) => updateData({ checkIn: e.target.value })}
-            style={{ fontSize: '0.9rem' }}
-          />
+          <input type="date" className="form-input" value={data.checkIn}
+            onChange={(e) => updateData({ checkIn: e.target.value })} style={{ fontSize: '0.9rem' }} />
         </div>
-        
+
         <h4 style={{ fontSize: '1rem', marginTop: '20px', marginBottom: '10px', color: 'rgba(255,255,255,0.8)' }}>Guests</h4>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div className="form-group">
             <label className="form-label" style={{ fontSize: '0.8rem' }}>Adults</label>
-            <input 
-              type="number" 
-              min="1" 
-              className="form-input" 
-              value={data.adults} 
-              onChange={(e) => updateData({ adults: parseInt(e.target.value) || 1 })}
-              style={{ fontSize: '0.9rem' }}
-            />
+            <input type="number" min="1" className="form-input" value={data.adults}
+              onChange={(e) => updateData({ adults: parseInt(e.target.value) || 1 })} style={{ fontSize: '0.9rem' }} />
           </div>
           <div className="form-group">
             <label className="form-label" style={{ fontSize: '0.8rem' }}>Children</label>
-            <input 
-              type="number" 
-              min="0" 
-              className="form-input" 
-              value={data.children} 
-              onChange={(e) => updateData({ children: parseInt(e.target.value) || 0 })}
-              style={{ fontSize: '0.9rem' }}
-            />
+            <input type="number" min="0" className="form-input" value={data.children}
+              onChange={(e) => updateData({ children: parseInt(e.target.value) || 0 })} style={{ fontSize: '0.9rem' }} />
           </div>
         </div>
-        
-        <div style={{ marginTop: '30px' }}>
-           <button className="btn-secondary" onClick={back} style={{ width: '100%', padding: '10px' }}>← Back to step 1</button>
+
+        {/* Live price hint */}
+        <div style={{ marginTop: 16, padding: '10px 12px', borderRadius: 8, background: 'rgba(154,205,50,0.07)', border: '1px solid rgba(154,205,50,0.2)', fontSize: '0.78rem', color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
+          Prices update live based on your guest count. Click <strong style={{ color: 'var(--primary)' }}>"See Breakdown"</strong> on any card.
+        </div>
+
+        <div style={{ marginTop: '24px' }}>
+          <button className="btn-secondary" onClick={back} style={{ width: '100%', padding: '10px' }}>← Back to step 1</button>
         </div>
       </div>
 
@@ -287,19 +293,22 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
       <div className="booking-main-content">
         <h2 className="booking-title" style={{ marginTop: 0 }}>Select Safari Package</h2>
         {error && <div style={{ color: "var(--dash-danger)", marginBottom: 20 }}>{error}</div>}
-        
+
         {searchLoading ? (
-           <div style={{ padding: 40, textAlign: "center" }}>
-             <Loader2 size={32} className="spinner" style={{ margin: '0 auto', color: 'var(--primary)' }} />
-           </div>
+          <div style={{ padding: 40, textAlign: "center" }}>
+            <Loader2 size={32} className="spinner" style={{ margin: '0 auto', color: 'var(--primary)' }} />
+          </div>
         ) : availablePackages.length === 0 ? (
           <div style={{ padding: 40, textAlign: "center", background: "rgba(255,255,255,0.05)", borderRadius: 12 }}>
             <p>No safari packages currently available.</p>
           </div>
         ) : (
           <div className="room-grid">
-            {availablePackages.map((pkg: SafariPackage) => {
+            {availablePackages.map((pkg: any) => {
               const image = pkg.images?.[0] || "/images/assets/leapords/519f7d6a-069a-4628-8711-2dd4b07647bc.jpg";
+              const priceInfo = getPriceInfo(pkg);
+              const rules = pkg.pricingRules as any;
+              const isPriceExpanded = expandedPricing === pkg.id;
               return (
                 <div key={pkg.id} className="room-card" style={{ display: 'flex', flexDirection: 'column' }}>
                   <div className="room-img-wrap" style={{ height: '200px' }}>
@@ -307,10 +316,10 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
                   </div>
                   <div className="room-info" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <h3 style={{ fontSize: '1.5rem', marginBottom: 5 }}>{pkg.name}</h3>
-                    <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', marginBottom: 15 }}>
-                      {pkg.startTime} - {pkg.endTime}
+                    <div style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>
+                      {pkg.startTime} – {pkg.endTime}
                     </div>
-                    <div className="room-features" style={{ marginBottom: 15, flex: 1 }}>
+                    <div className="room-features" style={{ marginBottom: 12, flex: 1 }}>
                       {pkg.inclusions?.slice(0, 3).map((f: string, i: number) => (
                         <span key={i} className="room-feature"><Check size={14} color="var(--primary)"/> {f}</span>
                       ))}
@@ -318,19 +327,62 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
                         <span className="room-feature" style={{ color: 'rgba(255,255,255,0.5)' }}>+{pkg.inclusions.length - 3} more</span>
                       )}
                     </div>
-                    <div className="room-price" style={{ marginBottom: 15 }}>
-                      {formatPrice(pkg.basePrice)} <span style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.5)', fontWeight: 400 }}>/ {pkg.pricingType === "PER_PERSON" ? "person" : "jeep"}</span>
+
+                    {/* Capacity hint */}
+                    {rules && (
+                      <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>
+                        {rules.minGuests} – {rules.maxCapacity} guests · {rules.strategyType === 'PRIVATE_FLAT' ? 'Private Jeep' : rules.strategyType === 'GROUP_TIERED' ? 'Group Pack' : 'Per Person'}
+                      </div>
+                    )}
+
+                    {/* Price Display */}
+                    <div style={{ marginBottom: 10 }}>
+                      {priceInfo.valid ? (
+                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)' }}>
+                          {formatPrice(priceInfo.totalPrice)}
+                          <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'rgba(255,255,255,0.5)', marginLeft: 6 }}>total</span>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.85rem', color: 'var(--dash-danger)' }}>{priceInfo.validationError}</div>
+                      )}
+
+                      {/* Breakdown toggle */}
+                      {priceInfo.valid && priceInfo.lines.length > 0 && (
+                        <button
+                          onClick={() => setExpandedPricing(isPriceExpanded ? null : pkg.id)}
+                          style={{ background: 'none', border: 'none', color: 'rgba(154,205,50,0.7)', fontSize: '0.75rem', cursor: 'pointer', padding: '4px 0', textDecoration: 'underline' }}>
+                          {isPriceExpanded ? 'Hide' : 'See'} breakdown
+                        </button>
+                      )}
+
+                      {/* Price Breakdown */}
+                      {isPriceExpanded && (
+                        <div style={{ marginTop: 8, padding: '10px 12px', borderRadius: 8, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                          {priceInfo.lines.map((line, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', padding: '3px 0', color: 'rgba(255,255,255,0.7)' }}>
+                              <span>{line.label}</span>
+                              <span style={{ fontWeight: 600, color: '#fff' }}>{line.amount === 0 ? 'Free' : `$${line.amount.toFixed(2)}`}</span>
+                            </div>
+                          ))}
+                          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 6, paddingTop: 6, display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', fontWeight: 700 }}>
+                            <span>Total</span>
+                            <span style={{ color: 'var(--primary)' }}>{formatPrice(priceInfo.totalPrice)}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <button 
-                      className="btn-primary" 
-                      style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center' }} 
-                      onClick={() => handleSelect(pkg)}
+
+                    <button
+                      className="btn-primary"
+                      disabled={!priceInfo.valid}
+                      style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center', opacity: priceInfo.valid ? 1 : 0.4 }}
+                      onClick={() => priceInfo.valid && handleSelect(pkg)}
                     >
-                      Select Safari
+                      {priceInfo.valid ? 'Select Safari' : priceInfo.validationError}
                     </button>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         )}
@@ -347,22 +399,61 @@ function Step3({ data, updateData, next, back }: any) {
   const [availableAddons, setAvailableAddons] = useState<ExtraService[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Local state for dropdown selections: addonId -> { dimensionKey: selectedValue }
+  const [addonSelections, setAddonSelections] = useState<Record<string, Record<string, string>>>({});
+
   useEffect(() => {
     setLoading(true);
     fetch("/api/booking/addons")
       .then(res => res.json())
       .then(json => {
-        if (json.addons) setAvailableAddons(json.addons);
+        if (json.addons) {
+          setAvailableAddons(json.addons);
+          // Initialize defaults for TIERED_OPTIONS
+          const initialSelections: Record<string, Record<string, string>> = {};
+          json.addons.forEach((a: any) => {
+            const opts = a.pricingOptions as ServicePricingOptions | null;
+            if (opts?.strategyType === "TIERED_OPTIONS" && opts.dimensions) {
+              const def: Record<string, string> = {};
+              opts.dimensions.forEach(d => { if (d.options.length > 0) def[d.key] = d.options[0]; });
+              initialSelections[a.id] = def;
+            }
+          });
+          // Override with any already selected in data.addons
+          data.addons.forEach((sel: any) => {
+            if (sel.selectedOptions) {
+              initialSelections[sel.id] = { ...initialSelections[sel.id], ...sel.selectedOptions };
+            }
+          });
+          setAddonSelections(initialSelections);
+        }
       })
       .finally(() => setLoading(false));
   }, []);
 
-  const toggleAddon = (addon: ExtraService) => {
+  const handleOptionChange = (addonId: string, dimKey: string, val: string) => {
+    setAddonSelections(prev => {
+      const nextState = { ...prev, [addonId]: { ...prev[addonId], [dimKey]: val } };
+      
+      // If this addon is currently selected, update it in the global data too
+      const existingIdx = data.addons.findIndex((a: any) => a.id === addonId);
+      if (existingIdx >= 0) {
+        const updatedAddons = [...data.addons];
+        updatedAddons[existingIdx] = { ...updatedAddons[existingIdx], selectedOptions: nextState[addonId] };
+        updateData({ addons: updatedAddons });
+      }
+      
+      return nextState;
+    });
+  };
+
+  const toggleAddon = (addon: any, validPrice: boolean) => {
+    if (!validPrice) return; // Don't allow selecting if options don't map to a price
     const exists = data.addons.find((a: any) => a.id === addon.id);
     if (exists) {
       updateData({ addons: data.addons.filter((a: any) => a.id !== addon.id) });
     } else {
-      updateData({ addons: [...data.addons, addon] });
+      updateData({ addons: [...data.addons, { ...addon, selectedOptions: addonSelections[addon.id] }] });
     }
   };
 
@@ -398,107 +489,138 @@ function Step3({ data, updateData, next, back }: any) {
         </div>
       ) : (
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '20px',
-          marginTop: 20
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: '20px', marginTop: 20
         }}>
           {availableAddons.map((a: any) => {
             const isSelected = !!data.addons.find((ad: any) => ad.id === a.id);
             const image = a.images?.[0] || null;
-            const pricingLabel = a.pricingModel === 'PER_PERSON' ? 'per person' : a.pricingModel === 'PER_KM' ? 'per km' : 'flat rate';
+            
+            // Calculate live price
+            const opts = a.pricingOptions as ServicePricingOptions | null;
+            let displayPrice = 0;
+            let pricingLabel = "";
+            let isValid = true;
+            
+            if (opts) {
+              const breakdown = calculateServicePrice(opts, data.adults, data.children, addonSelections[a.id]);
+              displayPrice = breakdown.totalPrice;
+              isValid = breakdown.valid;
+              if (opts.strategyType === "PER_PERSON") pricingLabel = "total (per person rates)";
+              else if (opts.strategyType === "PER_KM") pricingLabel = "+ per km";
+              else if (opts.strategyType === "TIERED_OPTIONS") pricingLabel = "total";
+              else pricingLabel = "flat rate";
+            } else {
+              // Legacy
+              displayPrice = a.pricingModel === "PER_PERSON" ? a.basePrice * (data.adults + data.children) : a.basePrice;
+              pricingLabel = a.pricingModel === "PER_PERSON" ? "total" : "flat rate";
+            }
+
+            const hasDimensions = opts?.strategyType === "TIERED_OPTIONS" && opts.dimensions && opts.dimensions.length > 0;
 
             return (
               <div
                 key={a.id}
-                onClick={() => toggleAddon(a)}
                 style={{
                   borderRadius: 16,
                   border: `2px solid ${isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}`,
                   background: isSelected ? 'rgba(154,205,50,0.06)' : 'rgba(0,0,0,0.25)',
                   overflow: 'hidden',
-                  cursor: 'pointer',
                   transition: 'all 0.25s ease',
                   position: 'relative',
                   boxShadow: isSelected ? '0 0 0 1px rgba(154,205,50,0.3), 0 8px 24px rgba(154,205,50,0.1)' : 'none',
+                  display: 'flex', flexDirection: 'column'
                 }}
               >
-                {/* Image */}
-                <div style={{ position: 'relative', height: 160, background: '#111', overflow: 'hidden' }}>
+                {/* Image Area - clickable to toggle */}
+                <div 
+                  onClick={() => toggleAddon(a, isValid)}
+                  style={{ position: 'relative', height: 160, background: '#111', overflow: 'hidden', cursor: isValid ? 'pointer' : 'not-allowed' }}>
                   {image ? (
-                    <Image
-                      src={image}
-                      alt={a.name}
-                      fill
-                      style={{ objectFit: 'cover', opacity: isSelected ? 0.8 : 0.55, transition: 'opacity 0.25s' }}
-                    />
+                    <Image src={image} alt={a.name} fill style={{ objectFit: 'cover', opacity: isSelected ? 0.8 : 0.55, transition: 'opacity 0.25s' }} />
                   ) : (
-                    <div style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      height: '100%', fontSize: '2.5rem', opacity: 0.3
-                    }}>✦</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '2.5rem', opacity: 0.3 }}>✦</div>
                   )}
-                  {/* Gradient overlay */}
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)' }} />
+                  
                   <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)'
-                  }} />
-                  {/* Category badge */}
+                    position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
+                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '3px 10px',
+                    fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)', letterSpacing: '0.05em', textTransform: 'uppercase'
+                  }}>{a.category}</div>
+                  
                   <div style={{
-                    position: 'absolute', top: 10, left: 10,
-                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: 20, padding: '3px 10px',
-                    fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)',
-                    letterSpacing: '0.05em', textTransform: 'uppercase'
-                  }}>
-                    {a.category}
-                  </div>
-                  {/* Checkbox */}
-                  <div style={{
-                    position: 'absolute', top: 10, right: 10,
-                    width: 26, height: 26, borderRadius: 6,
+                    position: 'absolute', top: 10, right: 10, width: 26, height: 26, borderRadius: 6,
                     border: `2px solid ${isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.3)'}`,
-                    background: isSelected ? 'var(--primary)' : 'rgba(0,0,0,0.5)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: isSelected ? 'var(--primary)' : 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'all 0.2s'
                   }}>
                     {isSelected && <Check size={14} color="#000" strokeWidth={3} />}
                   </div>
                 </div>
 
-                {/* Content */}
-                <div style={{ padding: '16px 18px 18px' }}>
-                  <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6, color: '#fff' }}>{a.name}</h4>
-                  {a.description && (
-                    <p style={{
-                      fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)',
-                      lineHeight: 1.55, marginBottom: 14,
-                      display: '-webkit-box', WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                    }}>
-                      {a.description}
-                    </p>
+                {/* Content Area */}
+                <div style={{ padding: '16px 18px 18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div onClick={() => toggleAddon(a, isValid)} style={{ cursor: isValid ? 'pointer' : 'not-allowed', flex: 1 }}>
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6, color: '#fff' }}>{a.name}</h4>
+                    {a.description && (
+                      <p style={{
+                        fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, marginBottom: 14,
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                      }}>{a.description}</p>
+                    )}
+                  </div>
+
+                  {/* Dimension Selectors (if any) */}
+                  {hasDimensions && (
+                    <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {opts!.dimensions!.map(dim => (
+                        <div key={dim.key}>
+                          <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 4 }}>{dim.label}</label>
+                          <select 
+                            style={{ 
+                              width: '100%', padding: '6px 10px', borderRadius: 6, 
+                              background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', 
+                              color: '#fff', fontSize: '0.85rem', outline: 'none' 
+                            }}
+                            value={addonSelections[a.id]?.[dim.key] || ""}
+                            onChange={(e) => handleOptionChange(a.id, dim.key, e.target.value)}
+                          >
+                            {dim.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>
-                        {formatPrice(a.basePrice)}
-                      </span>
-                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 4 }}>
-                        / {pricingLabel}
-                      </span>
+
+                  {/* Price & Add Button */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto' }}>
+                    <div onClick={() => toggleAddon(a, isValid)} style={{ cursor: isValid ? 'pointer' : 'not-allowed' }}>
+                      {isValid ? (
+                        <>
+                          <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>
+                            {formatPrice(displayPrice)}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 4 }}>
+                            / {pricingLabel}
+                          </span>
+                        </>
+                      ) : (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--dash-danger)' }}>Select options to view price</span>
+                      )}
                     </div>
-                    <div style={{
-                      fontSize: '0.78rem', fontWeight: 600, padding: '5px 12px',
-                      borderRadius: 20,
-                      background: isSelected ? 'rgba(154,205,50,0.15)' : 'rgba(255,255,255,0.05)',
-                      color: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.5)',
-                      border: `1px solid ${isSelected ? 'rgba(154,205,50,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                      transition: 'all 0.2s'
-                    }}>
+                    <button 
+                      onClick={() => toggleAddon(a, isValid)}
+                      disabled={!isValid}
+                      style={{
+                        fontSize: '0.78rem', fontWeight: 600, padding: '5px 12px', borderRadius: 20, cursor: isValid ? 'pointer' : 'not-allowed',
+                        background: isSelected ? 'rgba(154,205,50,0.15)' : 'rgba(255,255,255,0.05)',
+                        color: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.5)',
+                        border: `1px solid ${isSelected ? 'rgba(154,205,50,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                        transition: 'all 0.2s', opacity: isValid ? 1 : 0.5
+                      }}>
                       {isSelected ? '✓ Added' : '+ Add'}
-                    </div>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -527,30 +649,38 @@ function Step4({ data, updateData, back, next }: any) {
   const [error, setError] = useState("");
   const { data: session } = useSession();
 
-  // Calculate pricing based on logic
-  const safariPrice = data.safariPackage?.pricingType === "PER_PERSON" 
-    ? (data.safariPackage.basePrice * (data.adults + data.children))
-    : (data.safariPackage?.basePrice || 0);
+  // ── Safari price using engine ──
+  const safariPriceInfo = (() => {
+    const rules = data.safariPackage?.pricingRules as SafariPricingRules | null;
+    if (!rules) {
+      const price = data.safariPackage?.pricingType === "PER_PERSON"
+        ? (data.safariPackage.basePrice * (data.adults + data.children))
+        : (data.safariPackage?.basePrice || 0);
+      return { totalPrice: price, lines: [{ label: "Safari Package", amount: price }], valid: true };
+    }
+    return calculateSafariPrice(rules, data.adults, data.children);
+  })();
 
-  let addonsTotal = 0;
-  data.addons.forEach((a: ExtraService) => {
-    if (a.pricingModel === "PER_PERSON") addonsTotal += (a.basePrice * (data.adults + data.children));
-    else addonsTotal += a.basePrice; // Flat rate or Per KM (ignoring km for now)
+  // ── Addon prices using engine ──
+  const addonBreakdowns = data.addons.map((a: any) => {
+    const opts = a.pricingOptions as ServicePricingOptions | null;
+    if (!opts) {
+      const price = a.pricingModel === "PER_PERSON" ? (a.basePrice * (data.adults + data.children)) : a.basePrice;
+      return { addon: a, totalPrice: price, lines: [{ label: a.name, amount: price }], valid: true };
+    }
+    const breakdown = calculateServicePrice(opts, data.adults, data.children, a.selectedOptions);
+    return { addon: a, ...breakdown };
   });
 
-  const total = safariPrice + addonsTotal;
+  const addonsTotal = addonBreakdowns.reduce((sum: number, b: any) => sum + (b.valid ? b.totalPrice : 0), 0);
+  const total = (safariPriceInfo.valid ? safariPriceInfo.totalPrice : 0) + addonsTotal;
 
   const handleSubmit = async () => {
-    if (!data.guest.name || !data.guest.email) {
-      setError("Please fill in your name and email.");
-      return;
-    }
+    if (!data.guest.name || !data.guest.email) { setError("Please fill in your name and email."); return; }
     setLoading(true);
     setError("");
-
     try {
       const userId = (session?.user as any)?.id || null;
-      
       const payload = {
         isSafariOnly: true,
         safariPackageId: data.safariPackage?.id,
@@ -561,23 +691,22 @@ function Step4({ data, updateData, back, next }: any) {
         addons: data.addons.map((a: any) => ({
           id: a.id,
           pricingModel: a.pricingModel,
-          basePrice: a.basePrice
+          basePrice: a.basePrice,
+          selectedOptions: a.selectedOptions,
         })),
         guest: data.guest,
         userId,
-        safariPrice,
-        totalPrice: total
+        safariPrice: safariPriceInfo.totalPrice,
+        totalPrice: total,
+        pricingSnapshot: {
+          safari: safariPriceInfo,
+          addons: addonBreakdowns.map((b: any) => ({ id: b.addon.id, name: b.addon.name, price: b.totalPrice, lines: b.lines })),
+        },
       };
-
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to create booking");
-
-      next(); // Go to success page
+      next();
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -589,112 +718,96 @@ function Step4({ data, updateData, back, next }: any) {
     <div className="checkout-grid">
       <div className="booking-panel" style={{ marginBottom: 0 }}>
         <h2 className="booking-title">Guest Details</h2>
-        
         <div className="form-grid">
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Full Name *</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="e.g. David Attenborough" 
-              value={data.guest.name}
-              onChange={(e) => updateData({ guest: { ...data.guest, name: e.target.value } })}
-            />
+            <input type="text" className="form-input" placeholder="e.g. David Attenborough"
+              value={data.guest.name} onChange={(e) => updateData({ guest: { ...data.guest, name: e.target.value } })} />
           </div>
           <div className="form-group">
             <label className="form-label">Email Address *</label>
-            <input 
-              type="email" 
-              className="form-input" 
-              placeholder="david@example.com" 
-              value={data.guest.email}
-              onChange={(e) => updateData({ guest: { ...data.guest, email: e.target.value } })}
-            />
+            <input type="email" className="form-input" placeholder="david@example.com"
+              value={data.guest.email} onChange={(e) => updateData({ guest: { ...data.guest, email: e.target.value } })} />
           </div>
           <div className="form-group">
             <label className="form-label">Phone Number</label>
-            <input 
-              type="tel" 
-              className="form-input" 
-              placeholder="+1 000 000 0000" 
-              value={data.guest.phone}
-              onChange={(e) => updateData({ guest: { ...data.guest, phone: e.target.value } })}
-            />
+            <input type="tel" className="form-input" placeholder="+1 000 000 0000"
+              value={data.guest.phone} onChange={(e) => updateData({ guest: { ...data.guest, phone: e.target.value } })} />
           </div>
           <div className="form-group">
             <label className="form-label">Country</label>
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="e.g. United Kingdom" 
-              value={data.guest.country}
-              onChange={(e) => updateData({ guest: { ...data.guest, country: e.target.value } })}
-            />
+            <input type="text" className="form-input" placeholder="e.g. United Kingdom"
+              value={data.guest.country} onChange={(e) => updateData({ guest: { ...data.guest, country: e.target.value } })} />
           </div>
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label className="form-label">Special Requests</label>
-            <textarea 
-              className="form-input" 
-              rows={4} 
-              placeholder="Dietary requirements, celebrations..." 
-              style={{ resize: 'vertical' }}
-              value={data.guest.requests}
-              onChange={(e) => updateData({ guest: { ...data.guest, requests: e.target.value } })}
-            ></textarea>
+            <textarea className="form-input" rows={4} placeholder="Dietary requirements, celebrations..."
+              style={{ resize: 'vertical' }} value={data.guest.requests}
+              onChange={(e) => updateData({ guest: { ...data.guest, requests: e.target.value } })} />
           </div>
         </div>
-
         {error && <div style={{ color: "var(--dash-danger)", marginTop: 20 }}>{error}</div>}
-
         <div className="booking-actions">
           <button className="btn-secondary" onClick={back} disabled={loading}>← Back</button>
         </div>
       </div>
 
+      {/* Summary Panel */}
       <div className="summary-panel">
         <h3 style={{ fontSize: '1.5rem', marginBottom: 25, paddingBottom: 15, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>Booking Summary</h3>
-        
+
         <div className="summary-row">
           <span>Safari Date</span>
           <span style={{ color: '#fff' }}>{data.checkIn}</span>
         </div>
         <div className="summary-row">
           <span>Guests</span>
-          <span style={{ color: '#fff' }}>{data.adults} Adults, {data.children} Child</span>
+          <span style={{ color: '#fff' }}>{data.adults} Adult{data.adults !== 1 ? 's' : ''}{data.children > 0 ? `, ${data.children} Child${data.children !== 1 ? 'ren' : ''}` : ''}</span>
         </div>
-        
-        <div style={{ margin: '25px 0', borderTop: '1px dashed rgba(255,255,255,0.2)' }}></div>
-        
-        <div className="summary-row">
-          <span style={{ color: '#fff', fontWeight: 600 }}>{data.safariPackage?.name}</span>
-          <span style={{ color: '#fff' }}>{formatPrice(safariPrice)}</span>
-        </div>
-        {data.safariPackage && (
-          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', marginTop: '-10px', marginBottom: '15px' }}>
-            {data.safariPackage.startTime} - {data.safariPackage.endTime}
-          </div>
-        )}
 
-        {data.addons.map((a: any) => {
-          const addonCost = a.pricingModel === "PER_PERSON" ? (a.basePrice * (data.adults + data.children)) : a.basePrice;
-          return (
-            <div className="summary-row" key={a.id} style={{ fontSize: '0.875rem' }}>
-              <span>{a.name} <span style={{color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem'}}>({a.pricingModel.replace('_', ' ')})</span></span>
-              <span>{formatPrice(addonCost)}</span>
+        <div style={{ margin: '20px 0', borderTop: '1px dashed rgba(255,255,255,0.15)' }} />
+
+        {/* Safari Package */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, color: '#fff', marginBottom: 6 }}>
+            <span>{data.safariPackage?.name}</span>
+            <span>{formatPrice(safariPriceInfo.totalPrice)}</span>
+          </div>
+          {safariPriceInfo.lines.map((line, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)', padding: '2px 0 2px 12px' }}>
+              <span>{line.label}</span>
+              <span>{line.amount === 0 ? 'Free' : `$${line.amount.toFixed(2)}`}</span>
             </div>
-          )
-        })}
+          ))}
+        </div>
+
+        {/* Add-ons */}
+        {addonBreakdowns.map((b: any) => (
+          <div key={b.addon.id} style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#ddd', fontWeight: 500, marginBottom: 4 }}>
+              <span>{b.addon.name}</span>
+              <span>{b.valid ? formatPrice(b.totalPrice) : '—'}</span>
+            </div>
+            {b.addon.selectedOptions && Object.entries(b.addon.selectedOptions).map(([k, v]: any) => (
+              <div key={k} style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', padding: '1px 0 1px 12px' }}>{k}: {v}</div>
+            ))}
+            {b.lines?.length > 1 && b.lines.map((line: any, i: number) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.78rem', color: 'rgba(255,255,255,0.4)', padding: '1px 0 1px 12px' }}>
+                <span>{line.label}</span><span>${line.amount.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+        ))}
 
         <div className="summary-total">
           <span>Total</span>
           <span>{formatPrice(total)}</span>
         </div>
 
-        <button 
-          className="btn-primary" 
+        <button
+          className="btn-primary"
           style={{ width: '100%', marginTop: 30, padding: '20px', fontSize: '1.125rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-          onClick={handleSubmit}
-          disabled={loading}
+          onClick={handleSubmit} disabled={loading}
         >
           {loading && <Loader2 size={18} className="spinner" />}
           Complete Booking
@@ -703,6 +816,7 @@ function Step4({ data, updateData, back, next }: any) {
     </div>
   );
 }
+
 
 // -----------------------------------------------------------------------------
 // STEP 5: Success

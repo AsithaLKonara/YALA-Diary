@@ -246,18 +246,21 @@ model BookingEvent {
 // ─── Safari Packages & Services ───────────────────────────────────────────
 
 model SafariPackage {
-  id          String            @id @default(cuid())
-  name        String
-  type        SafariPackageType
-  startTime   String
-  endTime     String
-  basePrice   Float
-  pricingType PricingType
-  inclusions  String[]
-  images      String[]          @default([])
-  isActive    Boolean           @default(true)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  id           String            @id @default(cuid())
+  name         String
+  type         SafariPackageType
+  startTime    String
+  endTime      String
+  basePrice    Float             // Display / min price for listing
+  pricingType  PricingType       // Legacy field kept for compat
+  pricingRules Json?             // Advanced pricing strategy object
+  minGuests    Int               @default(1)
+  maxCapacity  Int               @default(6)
+  inclusions   String[]
+  images       String[]          @default([])
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   safariBookings SafariBooking[]
   extraServices  ExtraService[]
@@ -276,15 +279,16 @@ enum PricingType {
 }
 
 model ExtraService {
-  id           String               @id @default(cuid())
-  name         String
-  description  String?
-  category     String
-  pricingModel PricingModel
-  basePrice    Float                @default(0)
-  perKmRate    Float?
-  images       String[]             @default([])
-  isActive     Boolean              @default(true)
+  id             String               @id @default(cuid())
+  name           String
+  description    String?
+  category       String
+  pricingModel   PricingModel
+  basePrice      Float                @default(0) // Display / base price
+  perKmRate      Float?
+  pricingOptions Json?                // Advanced pricing options object
+  images         String[]             @default([])
+  isActive       Boolean              @default(true)
 
   bookings ServiceBooking[]
   safariPackages SafariPackage[]
@@ -305,8 +309,11 @@ model SafariBooking {
   packageId String
   package   SafariPackage @relation(fields: [packageId], references: [id])
 
-  date   DateTime
-  guests Int      @default(1)
+  date          DateTime
+  guests        Int      @default(1)
+  adultsCount   Int      @default(1)
+  childrenCount Int      @default(0)
+  pricingSnapshot Json?  // Snapshot of price calculation at booking time
 
   pickupLocation String?
   requiresPickup Boolean @default(false)

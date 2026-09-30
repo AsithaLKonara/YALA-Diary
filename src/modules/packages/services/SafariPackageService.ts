@@ -44,6 +44,9 @@ export class SafariPackageService {
     endTime: string;
     basePrice: number;
     pricingType: PricingType;
+    pricingRules?: any;
+    minGuests?: number;
+    maxCapacity?: number;
     inclusions: string[];
     images?: string[];
     extraServiceIds?: string[];
@@ -74,6 +77,9 @@ export class SafariPackageService {
       endTime: string;
       basePrice: number;
       pricingType: PricingType;
+      pricingRules: any;
+      minGuests: number;
+      maxCapacity: number;
       inclusions: string[];
       images: string[];
       isActive: boolean;
