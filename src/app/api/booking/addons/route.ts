@@ -3,8 +3,8 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const addons = await prisma.addOnService.findMany({
-      where: { active: true },
+    const addons = await prisma.extraService.findMany({
+      where: { isActive: true },
     });
     return NextResponse.json({ addons }, { status: 200 });
   } catch (error) {

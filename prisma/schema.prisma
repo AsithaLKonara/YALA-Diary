@@ -250,11 +250,13 @@ model SafariPackage {
   basePrice   Float
   pricingType PricingType
   inclusions  String[]
+  images      String[]          @default([])
   isActive    Boolean           @default(true)
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
 
   safariBookings SafariBooking[]
+  extraServices  ExtraService[]
 }
 
 enum SafariPackageType {
@@ -277,9 +279,11 @@ model ExtraService {
   pricingModel PricingModel
   basePrice    Float                @default(0)
   perKmRate    Float?
+  images       String[]             @default([])
   isActive     Boolean              @default(true)
 
   bookings ServiceBooking[]
+  safariPackages SafariPackage[]
 }
 
 

@@ -5,6 +5,7 @@ import AdminTopbar from "@/components/admin/Topbar";
 import Link from "next/link";
 import { formatDistanceToNow, format } from "date-fns";
 import NewBookingPanel from "@/components/admin/NewBookingPanel";
+import CustomConfirmDialog from "@/components/admin/CustomConfirmDialog";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState({
@@ -19,6 +20,7 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isManualBookingOpen, setIsManualBookingOpen] = useState(false);
+  const [alertDialog, setAlertDialog] = useState<{isOpen: boolean, message: string}>({isOpen: false, message: ""});
 
   useEffect(() => {
     fetchDashboardData();
@@ -69,7 +71,10 @@ export default function DashboardPage() {
   };
 
   const exportReportCSV = () => {
-    if (upcomingBookings.length === 0) return alert("No upcoming bookings to export.");
+    if (upcomingBookings.length === 0) {
+      setAlertDialog({ isOpen: true, message: "No upcoming bookings to export." });
+      return;
+    }
     const headers = ["Ref", "Guest Name", "Guest Email", "Country", "Check-in", "Check-out", "Room Type", "Status", "Revenue"];
     const rows = upcomingBookings.map(b => [
       b.ref, b.guestName, b.guestEmail, b.guestCountry, 
@@ -228,6 +233,17 @@ export default function DashboardPage() {
           }}
         />
       )}
+
+      <CustomConfirmDialog
+        isOpen={alertDialog.isOpen}
+        title="Info"
+        message={alertDialog.message}
+        onConfirm={() => setAlertDialog({ isOpen: false, message: "" })}
+        onCancel={() => setAlertDialog({ isOpen: false, message: "" })}
+        confirmText="OK"
+        showCancel={false}
+        type="info"
+      />
     </>
   );
 }

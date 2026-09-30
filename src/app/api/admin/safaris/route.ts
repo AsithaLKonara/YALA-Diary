@@ -5,47 +5,46 @@ import { auth } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await auth();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const role = (session?.user as any)?.role;
     if (!session || (role !== "ADMIN" && role !== "STAFF")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const slots = await prisma.safariSlot.findMany({
-      orderBy: [
-        { date: "asc" },
-        { slotType: "asc" }
-      ],
+    const safariBookings = await prisma.safariBooking.findMany({
+      orderBy: { date: "asc" },
       include: {
-        bookings: {
-          include: {
-            booking: {
-              select: {
-                guestName: true
-              }
-            }
-          }
+        package: true,
+        booking: {
+          select: { guestName: true }
         }
       }
     });
 
-    // Format the response to match the expected UI structure
-    const formattedSlots = slots.map(slot => {
-      const bookedSeats = slot.bookings.reduce((sum, b) => sum + b.guests, 0);
-      const guests = slot.bookings.map(b => b.booking.guestName);
-
-      return {
-        id: slot.id,
-        date: slot.date.toISOString().split("T")[0],
-        slot: slot.slotType,
-        capacity: slot.capacity,
-        booked: bookedSeats,
-        guide: slot.guide || "Unassigned",
-        guests: guests
-      };
+    // Group by date + packageId
+    const grouped = new Map<string, any>();
+    
+    safariBookings.forEach(sb => {
+      const dateStr = sb.date.toISOString().split("T")[0];
+      const key = `${dateStr}_${sb.packageId}`;
+      
+      if (!grouped.has(key)) {
+        grouped.set(key, {
+          id: key,
+          date: dateStr,
+          slot: sb.package.type,
+          capacity: 6, // Default capacity per jeep
+          booked: 0,
+          guide: "Unassigned",
+          guests: []
+        });
+      }
+      
+      const group = grouped.get(key);
+      group.booked += sb.guests;
+      group.guests.push(sb.booking.guestName);
     });
 
-    return NextResponse.json({ safaris: formattedSlots }, { status: 200 });
+    return NextResponse.json({ safaris: Array.from(grouped.values()) }, { status: 200 });
   } catch (error) {
     console.error("Admin safaris fetch error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -53,33 +52,5 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  try {
-    const session = await auth();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const role = (session?.user as any)?.role;
-    if (!session || (role !== "ADMIN" && role !== "STAFF")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const data = await req.json();
-    const { date, slotType, capacity, guide } = data;
-
-    if (!date || !slotType || !capacity) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    const slot = await prisma.safariSlot.create({
-      data: {
-        date: new Date(date),
-        slotType: slotType, // AM or PM
-        capacity: parseInt(capacity, 10),
-        guide: guide || null
-      }
-    });
-
-    return NextResponse.json({ success: true, slot }, { status: 201 });
-  } catch (error) {
-    console.error("Admin create safari error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+  return NextResponse.json({ error: "Slot creation is deprecated in the new packaging system" }, { status: 400 });
 }

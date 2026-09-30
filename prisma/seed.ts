@@ -127,16 +127,17 @@ async function main() {
   console.log("\n🎯 Seeding add-on services…");
   for (const addon of ADD_ONS) {
     const id = addon.name.toLowerCase().replace(/\s+/g, "_").replace(/[()]/g, "");
-    await prisma.addOnService.upsert({
+    await prisma.extraService.upsert({
       where: { id },
-      update: { price: addon.price, active: addon.active },
+      update: { basePrice: addon.price, isActive: addon.active },
       create: {
         id,
         name: addon.name,
         description: addon.description,
-        price: addon.price,
-        category: addon.category as "SAFARI" | "FOOD" | "SPA" | "TRANSPORT" | "OTHER",
-        active: addon.active,
+        basePrice: addon.price,
+        category: addon.category,
+        pricingModel: "FLAT_RATE",
+        isActive: addon.active,
       },
     });
     console.log(`  ✓ ${addon.name} — $${addon.price}`);

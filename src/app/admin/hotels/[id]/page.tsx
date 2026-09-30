@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import AdminTopbar from "@/components/admin/Topbar";
 import { useParams, useRouter } from "next/navigation";
+import CustomConfirmDialog from "@/components/admin/CustomConfirmDialog";
 
 export default function ConfigureHotelPage() {
   const { id } = useParams();
@@ -10,6 +11,7 @@ export default function ConfigureHotelPage() {
   const [hotel, setHotel] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [alertDialog, setAlertDialog] = useState<{isOpen: boolean, message: string, type: 'danger' | 'info' | 'warning'}>({isOpen: false, message: "", type: "info"});
   
   // Yala Form State
   const [category, setCategory] = useState("");
@@ -53,13 +55,14 @@ export default function ConfigureHotelPage() {
         })
       });
       if (res.ok) {
-        alert("Hotel configuration saved!");
-        router.push("/admin/hotels");
+        setAlertDialog({ isOpen: true, message: "Hotel configuration saved!", type: "info" });
+        setTimeout(() => router.push("/admin/hotels"), 1500);
       } else {
-        alert("Failed to save configuration");
+        setAlertDialog({ isOpen: true, message: "Failed to save configuration", type: "danger" });
       }
     } catch (err) {
       console.error(err);
+      setAlertDialog({ isOpen: true, message: "An error occurred", type: "danger" });
     } finally {
       setSaving(false);
     }
@@ -169,6 +172,17 @@ export default function ConfigureHotelPage() {
 
         </div>
       </div>
+
+      <CustomConfirmDialog
+        isOpen={alertDialog.isOpen}
+        title={alertDialog.type === 'danger' ? "Error" : "Success"}
+        message={alertDialog.message}
+        onConfirm={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
+        confirmText="OK"
+        showCancel={false}
+        type={alertDialog.type}
+      />
     </>
   );
 }

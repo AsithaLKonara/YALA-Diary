@@ -3,10 +3,14 @@
 import React, { useState, useEffect } from "react";
 import AdminTopbar from "@/components/admin/Topbar";
 import { Loader2 } from "lucide-react";
+import CustomConfirmDialog from "@/components/admin/CustomConfirmDialog";
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, userId: string, type: 'delete' | 'role', newRole?: string}>({isOpen: false, userId: "", type: "delete"});
+  const [alertDialog, setAlertDialog] = useState<{isOpen: boolean, message: string, type: 'danger' | 'info' | 'warning'}>({isOpen: false, message: "", type: "danger"});
   
   // Create user form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -68,38 +72,51 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDeleteUser = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
+  const handleDeleteUser = (id: string) => {
+    setConfirmDialog({ isOpen: true, userId: id, type: 'delete' });
+  };
+
+  const confirmDeleteUser = async () => {
     try {
-      const res = await fetch(`/api/admin/users/${id}`, {
+      const res = await fetch(`/api/admin/users/${confirmDialog.userId}`, {
         method: "DELETE"
       });
       if (res.ok) {
         fetchUsers();
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to delete user");
+        setAlertDialog({ isOpen: true, message: data.error || "Failed to delete user", type: "danger" });
       }
     } catch (err) {
       console.error(err);
+      setAlertDialog({ isOpen: true, message: "An error occurred", type: "danger" });
+    } finally {
+      setConfirmDialog(prev => ({ ...prev, isOpen: false }));
     }
   };
 
-  const handleRoleChange = async (id: string, role: string) => {
+  const handleRoleChange = (id: string, role: string) => {
+    setConfirmDialog({ isOpen: true, userId: id, type: 'role', newRole: role });
+  };
+
+  const confirmRoleChange = async () => {
     try {
-      const res = await fetch(`/api/admin/users/${id}`, {
+      const res = await fetch(`/api/admin/users/${confirmDialog.userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role })
+        body: JSON.stringify({ role: confirmDialog.newRole })
       });
       if (res.ok) {
         fetchUsers();
       } else {
         const data = await res.json();
-        alert(data.error || "Failed to update role");
+        setAlertDialog({ isOpen: true, message: data.error || "Failed to update role", type: "danger" });
       }
     } catch (err) {
       console.error(err);
+      setAlertDialog({ isOpen: true, message: "An error occurred", type: "danger" });
+    } finally {
+      setConfirmDialog(prev => ({ ...prev, isOpen: false }));
     }
   };
 
@@ -221,6 +238,30 @@ export default function AdminUsersPage() {
           </div>
         </div>
       </div>
+
+      <CustomConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.type === 'delete' ? "Delete User" : "Change Role"}
+        message={confirmDialog.type === 'delete' 
+          ? "Are you sure you want to delete this user? This action cannot be undone."
+          : `Are you sure you want to change this user's role?`
+        }
+        onConfirm={confirmDialog.type === 'delete' ? confirmDeleteUser : confirmRoleChange}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
+        confirmText="Confirm"
+        type={confirmDialog.type === 'delete' ? 'danger' : 'warning'}
+      />
+
+      <CustomConfirmDialog
+        isOpen={alertDialog.isOpen}
+        title={alertDialog.type === 'danger' ? "Error" : "Info"}
+        message={alertDialog.message}
+        onConfirm={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
+        confirmText="OK"
+        showCancel={false}
+        type={alertDialog.type}
+      />
     </>
   );
 }

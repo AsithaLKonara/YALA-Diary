@@ -3,12 +3,26 @@ import { ExtraServiceManager } from "@/modules/packages/services/ExtraServiceMan
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const data = await request.json();
-    const updatedService = await ExtraServiceManager.updateService(params.id, data);
+    const updatedService = await ExtraServiceManager.updateService(id, data);
     return NextResponse.json({ service: updatedService });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    await ExtraServiceManager.deleteService(id);
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

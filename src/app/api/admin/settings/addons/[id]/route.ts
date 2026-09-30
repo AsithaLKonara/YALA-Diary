@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { AddOnCategory } from "@/generated/prisma/client";
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -20,12 +19,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
 
     if (data.name !== undefined) updateData.name = data.name;
-    if (data.category !== undefined) updateData.category = data.category as AddOnCategory;
-    if (data.price !== undefined) updateData.price = parseFloat(data.price);
-    if (data.active !== undefined) updateData.active = data.active;
+    if (data.category !== undefined) updateData.category = data.category;
+    if (data.price !== undefined) updateData.basePrice = parseFloat(data.price);
+    if (data.active !== undefined) updateData.isActive = data.active;
     if (data.description !== undefined) updateData.description = data.description;
 
-    const addon = await prisma.addOnService.update({
+    const addon = await prisma.extraService.update({
       where: { id },
       data: updateData
     });
@@ -49,7 +48,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const { id } = await params;
     if (!id) return NextResponse.json({ error: "Missing addon ID" }, { status: 400 });
 
-    await prisma.addOnService.delete({
+    await prisma.extraService.delete({
       where: { id }
     });
 

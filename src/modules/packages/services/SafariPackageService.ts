@@ -24,7 +24,10 @@ export class SafariPackageService {
   /**
    * Creates a new safari package.
    */
-  static async createPackage(data: {
+  static async createPackage({
+    extraServiceIds,
+    ...data
+  }: {
     name: string;
     type: SafariPackageType;
     startTime: string;
@@ -32,9 +35,17 @@ export class SafariPackageService {
     basePrice: number;
     pricingType: PricingType;
     inclusions: string[];
+    images?: string[];
+    extraServiceIds?: string[];
   }): Promise<SafariPackage> {
     return prisma.safariPackage.create({
-      data,
+      data: {
+        ...data,
+        images: data.images || [],
+        extraServices: extraServiceIds?.length ? {
+          connect: extraServiceIds.map(id => ({ id }))
+        } : undefined
+      },
     });
   }
 
@@ -43,7 +54,10 @@ export class SafariPackageService {
    */
   static async updatePackage(
     id: string,
-    data: Partial<{
+    {
+      extraServiceIds,
+      ...data
+    }: Partial<{
       name: string;
       type: SafariPackageType;
       startTime: string;
@@ -51,12 +65,28 @@ export class SafariPackageService {
       basePrice: number;
       pricingType: PricingType;
       inclusions: string[];
+      images: string[];
       isActive: boolean;
+      extraServiceIds: string[];
     }>
   ): Promise<SafariPackage> {
     return prisma.safariPackage.update({
       where: { id },
-      data,
+      data: {
+        ...data,
+        extraServices: extraServiceIds ? {
+          set: extraServiceIds.map(serviceId => ({ id: serviceId }))
+        } : undefined
+      },
+    });
+  }
+
+  /**
+   * Deletes a safari package.
+   */
+  static async deletePackage(id: string): Promise<void> {
+    await prisma.safariPackage.delete({
+      where: { id },
     });
   }
 }

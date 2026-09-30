@@ -2,9 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import AdminTopbar from "@/components/admin/Topbar";
-import { Loader2 } from "lucide-react";
+import { Loader2, Edit2, Trash2 } from "lucide-react";
 import NewPackagePanel from "@/components/admin/NewPackagePanel";
 import NewExtraServicePanel from "@/components/admin/NewExtraServicePanel";
+import CustomConfirmDialog from "@/components/admin/CustomConfirmDialog";
 
 export default function PackagesPage() {
   const [activeTab, setActiveTab] = useState("packages");
@@ -13,6 +14,11 @@ export default function PackagesPage() {
   const [loading, setLoading] = useState(true);
   const [showNewPackage, setShowNewPackage] = useState(false);
   const [showNewService, setShowNewService] = useState(false);
+  const [editPackageData, setEditPackageData] = useState<any>(null);
+  const [editServiceData, setEditServiceData] = useState<any>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, type: 'package' | 'service', id: string, name: string}>({isOpen: false, type: 'package', id: "", name: ""});
+  const [alertDialog, setAlertDialog] = useState<{isOpen: boolean, message: string, type: 'danger' | 'info' | 'warning'}>({isOpen: false, message: "", type: "danger"});
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -35,6 +41,46 @@ export default function PackagesPage() {
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    setIsDeleting(true);
+    try {
+      const url = confirmDialog.type === 'package' 
+        ? `/api/admin/safari-packages/${confirmDialog.id}`
+        : `/api/admin/extra-services/${confirmDialog.id}`;
+        
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      setAlertDialog({ isOpen: true, message: "Failed to delete item", type: "danger" });
+    } finally {
+      setIsDeleting(false);
+      setConfirmDialog({ isOpen: false, type: 'package', id: "", name: "" });
+    }
+  };
+
+  const handleEditPackage = (pkg: any) => {
+    setEditPackageData(pkg);
+    setShowNewPackage(true);
+  };
+
+  const handleEditService = (srv: any) => {
+    setEditServiceData(srv);
+    setShowNewService(true);
+  };
+
+  const openNewPackage = () => {
+    setEditPackageData(null);
+    setShowNewPackage(true);
+  };
+
+  const openNewService = () => {
+    setEditServiceData(null);
+    setShowNewService(true);
+  };
+
   return (
     <>
       <AdminTopbar title="Safari Packages" />
@@ -46,9 +92,9 @@ export default function PackagesPage() {
           </div>
           <div className="admin-header-actions">
             {activeTab === "packages" ? (
-              <button onClick={() => setShowNewPackage(true)} className="btn-primary">Add Package</button>
+              <button onClick={openNewPackage} className="btn-primary">Add Package</button>
             ) : (
-              <button onClick={() => setShowNewService(true)} className="btn-primary">Add Service</button>
+              <button onClick={openNewService} className="btn-primary">Add Service</button>
             )}
           </div>
         </div>
@@ -96,14 +142,25 @@ export default function PackagesPage() {
                   display: 'flex', flexDirection: 'column', gap: '12px'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{pkg.name}</h3>
-                    <span style={{ 
-                      fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px',
-                      backgroundColor: pkg.isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                      color: pkg.isActive ? '#22c55e' : '#ef4444'
-                    }}>
-                      {pkg.isActive ? "Active" : "Inactive"}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{pkg.name}</h3>
+                      <span style={{ 
+                        fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', alignSelf: 'flex-start',
+                        backgroundColor: pkg.isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        color: pkg.isActive ? '#22c55e' : '#ef4444'
+                      }}>
+                        {pkg.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => handleEditPackage(pkg)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dash-muted)', padding: '4px' }}>
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => setConfirmDialog({ isOpen: true, type: 'package', id: pkg.id, name: pkg.name })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                   
                   <div style={{ fontSize: '0.85rem', color: 'var(--dash-muted)', display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -146,14 +203,25 @@ export default function PackagesPage() {
                   display: 'flex', flexDirection: 'column', gap: '12px'
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{srv.name}</h3>
-                    <span style={{ 
-                      fontSize: '0.75rem', padding: '4px 8px', borderRadius: '4px',
-                      backgroundColor: srv.isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                      color: srv.isActive ? '#22c55e' : '#ef4444'
-                    }}>
-                      {srv.isActive ? "Active" : "Inactive"}
-                    </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{srv.name}</h3>
+                      <span style={{ 
+                        fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', alignSelf: 'flex-start',
+                        backgroundColor: srv.isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        color: srv.isActive ? '#22c55e' : '#ef4444'
+                      }}>
+                        {srv.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => handleEditService(srv)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dash-muted)', padding: '4px' }}>
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => setConfirmDialog({ isOpen: true, type: 'service', id: srv.id, name: srv.name })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </div>
                   
                   <div style={{ fontSize: '0.85rem', color: 'var(--dash-muted)', display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -186,6 +254,7 @@ export default function PackagesPage() {
 
       {showNewPackage && (
         <NewPackagePanel
+          editData={editPackageData}
           onClose={() => setShowNewPackage(false)}
           onSuccess={() => {
             setShowNewPackage(false);
@@ -196,6 +265,7 @@ export default function PackagesPage() {
       
       {showNewService && (
         <NewExtraServicePanel
+          editData={editServiceData}
           onClose={() => setShowNewService(false)}
           onSuccess={() => {
             setShowNewService(false);
@@ -203,6 +273,27 @@ export default function PackagesPage() {
           }}
         />
       )}
+
+      <CustomConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={`Delete ${confirmDialog.type === 'package' ? 'Package' : 'Service'}`}
+        message={`Are you sure you want to delete "${confirmDialog.name}"? This action cannot be undone.`}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setConfirmDialog({ isOpen: false, type: 'package', id: "", name: "" })}
+        confirmText={isDeleting ? "Deleting..." : "Delete"}
+        type="danger"
+      />
+
+      <CustomConfirmDialog
+        isOpen={alertDialog.isOpen}
+        title={alertDialog.type === 'danger' ? "Error" : "Info"}
+        message={alertDialog.message}
+        onConfirm={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
+        confirmText="OK"
+        showCancel={false}
+        type={alertDialog.type}
+      />
     </>
   );
 }

@@ -24,7 +24,7 @@ export default async function GuestBookingsPage() {
       roomType: true,
       hotelRef: true,
       safariBookings: {
-        include: { slot: true }
+        include: { package: true }
       }
     },
     orderBy: {

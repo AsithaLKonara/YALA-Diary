@@ -1,15 +1,18 @@
 import React, { useState } from "react";
 import { X, Loader2 } from "lucide-react";
+import CustomConfirmDialog from "./CustomConfirmDialog";
 
-export default function NewExtraServicePanel({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+export default function NewExtraServicePanel({ onClose, onSuccess, editData }: { onClose: () => void, onSuccess: () => void, editData?: any }) {
   const [loading, setLoading] = useState(false);
+  const [errorDialog, setErrorDialog] = useState<{isOpen: boolean, message: string}>({isOpen: false, message: ""});
+  const [files, setFiles] = useState<File[]>([]);
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    category: "Food & Beverage",
-    pricingModel: "FLAT_RATE",
-    basePrice: 0,
-    perKmRate: 0,
+    name: editData?.name || "",
+    description: editData?.description || "",
+    category: editData?.category || "Food & Beverage",
+    pricingModel: editData?.pricingModel || "FLAT_RATE",
+    basePrice: editData?.basePrice || 0,
+    perKmRate: editData?.perKmRate || 0,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,23 +20,47 @@ export default function NewExtraServicePanel({ onClose, onSuccess }: { onClose: 
     setLoading(true);
 
     try {
+      let uploadedUrls: string[] = editData?.images || [];
+
+      if (files.length > 0) {
+        const uploadData = new FormData();
+        files.forEach(f => uploadData.append("images", f));
+        
+        const uploadRes = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: uploadData
+        });
+        
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json();
+          throw new Error(errData.error || "Failed to upload images");
+        }
+        
+        const uploadResult = await uploadRes.json();
+        uploadedUrls = uploadResult.urls || [];
+      }
+
       const payload = {
         ...formData,
         basePrice: Number(formData.basePrice),
         perKmRate: formData.pricingModel === "PER_KM" ? Number(formData.perKmRate) : null,
+        images: uploadedUrls,
       };
 
-      const res = await fetch("/api/admin/extra-services", {
-        method: "POST",
+      const url = editData ? `/api/admin/extra-services/${editData.id}` : "/api/admin/extra-services";
+      const method = editData ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) throw new Error("Failed to create extra service");
+      if (!res.ok) throw new Error("Failed to save extra service");
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to create extra service");
+      setErrorDialog({ isOpen: true, message: err.message || "Failed to save extra service" });
     } finally {
       setLoading(false);
     }
@@ -127,17 +154,48 @@ export default function NewExtraServicePanel({ onClose, onSuccess }: { onClose: 
               </div>
             )}
 
+            <div>
+              <label className="admin-label">Service Images (Max 5)</label>
+              <input type="file" multiple accept="image/*" className="admin-input" 
+                onChange={e => {
+                  if (e.target.files) {
+                    const selected = Array.from(e.target.files);
+                    if (selected.length > 5) {
+                      setErrorDialog({ isOpen: true, message: "You can only upload up to 5 images." });
+                      return;
+                    }
+                    setFiles(selected);
+                  }
+                }} 
+              />
+              {files.length > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '0.8rem', color: 'var(--dash-muted)' }}>
+                  {files.length} file(s) selected
+                </div>
+              )}
+            </div>
+
           </form>
         </div>
 
         <div style={{ padding: '20px', borderTop: '1px solid var(--dash-border)', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button className="btn-ghost" onClick={onClose} disabled={loading}>Cancel</button>
           <button type="submit" form="service-form" className="btn-primary" disabled={loading}>
-            {loading ? <Loader2 size={16} className="spinner" /> : "Create Service"}
+            {loading ? <Loader2 size={16} className="spinner" /> : (editData ? "Save Changes" : "Create Service")}
           </button>
         </div>
 
       </div>
+
+      <CustomConfirmDialog
+        isOpen={errorDialog.isOpen}
+        title="Error"
+        message={errorDialog.message}
+        onConfirm={() => setErrorDialog({ isOpen: false, message: "" })}
+        onCancel={() => setErrorDialog({ isOpen: false, message: "" })}
+        confirmText="OK"
+        showCancel={false}
+      />
     </div>
   );
 }

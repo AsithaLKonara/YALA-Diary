@@ -31,9 +31,13 @@ export class ExtraServiceManager {
     pricingModel: PricingModel;
     basePrice: number;
     perKmRate?: number;
+    images?: string[];
   }): Promise<ExtraService> {
     return prisma.extraService.create({
-      data,
+      data: {
+        ...data,
+        images: data.images || []
+      },
     });
   }
 
@@ -49,12 +53,22 @@ export class ExtraServiceManager {
       pricingModel: PricingModel;
       basePrice: number;
       perKmRate: number;
+      images: string[];
       isActive: boolean;
     }>
   ): Promise<ExtraService> {
     return prisma.extraService.update({
       where: { id },
       data,
+    });
+  }
+
+  /**
+   * Deletes an extra service.
+   */
+  static async deleteService(id: string): Promise<void> {
+    await prisma.extraService.delete({
+      where: { id },
     });
   }
 

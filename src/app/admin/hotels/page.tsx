@@ -4,12 +4,14 @@ import React, { useState, useEffect } from "react";
 import AdminTopbar from "@/components/admin/Topbar";
 import Link from "next/link";
 import { format } from "date-fns";
+import CustomConfirmDialog from "@/components/admin/CustomConfirmDialog";
 
 export default function AdminHotelsPage() {
   const [hotels, setHotels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState("");
+  const [alertDialog, setAlertDialog] = useState<{isOpen: boolean, message: string, type: 'danger' | 'info' | 'warning'}>({isOpen: false, message: "", type: "info"});
 
   const fetchHotels = async () => {
     try {
@@ -34,7 +36,7 @@ export default function AdminHotelsPage() {
       const res = await fetch("/api/admin/integrations/siteminder/sync", { method: "POST" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to sync");
-      alert(`Sync completed. Imported/Updated ${json.syncedCount} properties.`);
+      setAlertDialog({ isOpen: true, message: `Sync completed. Imported/Updated ${json.syncedCount} properties.`, type: "info" });
       fetchHotels();
     } catch (err: any) {
       setError(err.message);
@@ -110,6 +112,17 @@ export default function AdminHotelsPage() {
         </div>
 
       </div>
+
+      <CustomConfirmDialog
+        isOpen={alertDialog.isOpen}
+        title={alertDialog.type === 'danger' ? "Error" : "Info"}
+        message={alertDialog.message}
+        onConfirm={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
+        onCancel={() => setAlertDialog(prev => ({ ...prev, isOpen: false }))}
+        confirmText="OK"
+        showCancel={false}
+        type={alertDialog.type}
+      />
     </>
   );
 }

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { AddOnCategory } from "@/generated/prisma/client";
 
 
 export async function GET() {
@@ -13,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const addons = await prisma.addOnService.findMany({
+    const addons = await prisma.extraService.findMany({
       orderBy: { name: "asc" }
     });
 
@@ -40,12 +39,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const addon = await prisma.addOnService.create({
+    const addon = await prisma.extraService.create({
       data: {
         name,
-        category: category as AddOnCategory,
-        price: parseFloat(price),
-        active: active ?? true,
+        category: category,
+        basePrice: parseFloat(price),
+        isActive: active ?? true,
+        pricingModel: "FLAT_RATE",
         description: description || null
       }
     });

@@ -33,10 +33,10 @@ export async function POST(req: Request) {
     const addOnRecords = [];
     if (addons && Array.isArray(addons)) {
       for (const addonId of addons) {
-        const addonService = await prisma.addOnService.findUnique({ where: { id: addonId }});
+        const addonService = await prisma.extraService.findUnique({ where: { id: addonId }});
         if (addonService) {
-          addOnRevenue += addonService.price;
-          addOnRecords.push({ addOnId: addonService.id, price: addonService.price, quantity: 1 });
+          addOnRevenue += addonService.basePrice;
+          addOnRecords.push({ serviceId: addonService.id, quantity: 1, totalPrice: addonService.basePrice });
         }
       }
     }
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         totalRevenue,
         status: "DRAFT",
         paymentStatus: "UNPAID",
-        addOns: {
+        serviceBookings: {
           create: addOnRecords
         }
       }

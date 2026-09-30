@@ -1,40 +1,88 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
+import CustomConfirmDialog from "./CustomConfirmDialog";
 
-export default function NewPackagePanel({ onClose, onSuccess }: { onClose: () => void, onSuccess: () => void }) {
+export default function NewPackagePanel({ onClose, onSuccess, editData }: { onClose: () => void, onSuccess: () => void, editData?: any }) {
   const [loading, setLoading] = useState(false);
+  const [errorDialog, setErrorDialog] = useState<{isOpen: boolean, message: string}>({isOpen: false, message: ""});
+  const [files, setFiles] = useState<File[]>([]);
+  const [availableExtras, setAvailableExtras] = useState<any[]>([]);
+  const [selectedExtras, setSelectedExtras] = useState<string[]>(
+    editData?.extraServices ? editData.extraServices.map((e: any) => e.id) : []
+  );
   const [formData, setFormData] = useState({
-    name: "",
-    type: "MORNING",
-    startTime: "06:00",
-    endTime: "12:00",
-    basePrice: 0,
-    pricingType: "PER_PERSON",
-    inclusions: "", // comma separated
+    name: editData?.name || "",
+    type: editData?.type || "MORNING",
+    startTime: editData?.startTime || "06:00",
+    endTime: editData?.endTime || "12:00",
+    basePrice: editData?.basePrice || 0,
+    pricingType: editData?.pricingType || "PER_PERSON",
+    inclusions: editData?.inclusions?.join(", ") || "",
   });
+
+  useEffect(() => {
+    if (editData && editData.extraServices) {
+      setSelectedExtras(editData.extraServices.map((e: any) => e.id));
+    }
+  }, [editData]);
+
+  useEffect(() => {
+    fetch("/api/admin/extra-services")
+      .then(res => res.json())
+      .then(data => {
+        if (data.services) setAvailableExtras(data.services);
+      })
+      .catch(console.error);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      let uploadedUrls: string[] = editData?.images || [];
+
+      if (files.length > 0) {
+        const uploadData = new FormData();
+        files.forEach(f => uploadData.append("images", f));
+        
+        const uploadRes = await fetch("/api/admin/upload", {
+          method: "POST",
+          body: uploadData
+        });
+        
+        if (!uploadRes.ok) {
+          const errData = await uploadRes.json();
+          throw new Error(errData.error || "Failed to upload images");
+        }
+        
+        const uploadResult = await uploadRes.json();
+        // append new images to existing ones, or replace them based on preference. Let's just append for now up to 5, or replace if we don't have a way to delete specific ones. Let's replace for simplicity if new files are uploaded.
+        uploadedUrls = uploadResult.urls || [];
+      }
+
       const payload = {
         ...formData,
         basePrice: Number(formData.basePrice),
-        inclusions: formData.inclusions.split(",").map(s => s.trim()).filter(Boolean)
+        inclusions: formData.inclusions.split(",").map((s: string) => s.trim()).filter(Boolean),
+        images: uploadedUrls,
+        extraServiceIds: selectedExtras
       };
 
-      const res = await fetch("/api/admin/safari-packages", {
-        method: "POST",
+      const url = editData ? `/api/admin/safari-packages/${editData.id}` : "/api/admin/safari-packages";
+      const method = editData ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) throw new Error("Failed to create package");
+      if (!res.ok) throw new Error("Failed to save package");
       onSuccess();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to create package");
+      setErrorDialog({ isOpen: true, message: err.message || "Failed to save package" });
     } finally {
       setLoading(false);
     }
@@ -113,17 +161,72 @@ export default function NewPackagePanel({ onClose, onSuccess }: { onClose: () =>
                 placeholder="Licensed tracker, Free hotel pickup, Herbal Tea..." />
             </div>
 
+            <div>
+              <label className="admin-label">Package Images (Max 5)</label>
+              <input type="file" multiple accept="image/*" className="admin-input" 
+                onChange={e => {
+                  if (e.target.files) {
+                    const selected = Array.from(e.target.files);
+                    if (selected.length > 5) {
+                      setErrorDialog({ isOpen: true, message: "You can only upload up to 5 images." });
+                      return;
+                    }
+                    setFiles(selected);
+                  }
+                }} 
+              />
+              {files.length > 0 && (
+                <div style={{ marginTop: '8px', fontSize: '0.8rem', color: 'var(--dash-muted)' }}>
+                  {files.length} file(s) selected
+                </div>
+              )}
+            </div>
+
+            {availableExtras.length > 0 && (
+              <div>
+                <label className="admin-label">Available Extra Services</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
+                  {availableExtras.map(ext => (
+                    <label key={ext.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--dash-text)' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedExtras.includes(ext.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedExtras([...selectedExtras, ext.id]);
+                          } else {
+                            setSelectedExtras(selectedExtras.filter(id => id !== ext.id));
+                          }
+                        }}
+                      />
+                      {ext.name} (${ext.basePrice} / {ext.pricingModel.replace('_', ' ')})
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </form>
         </div>
 
         <div style={{ padding: '20px', borderTop: '1px solid var(--dash-border)', display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
           <button className="btn-ghost" onClick={onClose} disabled={loading}>Cancel</button>
           <button type="submit" form="package-form" className="btn-primary" disabled={loading}>
-            {loading ? <Loader2 size={16} className="spinner" /> : "Create Package"}
+            {loading ? <Loader2 size={16} className="spinner" /> : (editData ? "Save Changes" : "Create Package")}
           </button>
         </div>
 
       </div>
+
+      <CustomConfirmDialog
+        isOpen={errorDialog.isOpen}
+        title="Error"
+        message={errorDialog.message}
+        onConfirm={() => setErrorDialog({ isOpen: false, message: "" })}
+        onCancel={() => setErrorDialog({ isOpen: false, message: "" })}
+        confirmText="OK"
+        showCancel={false}
+      />
     </div>
   );
 }
