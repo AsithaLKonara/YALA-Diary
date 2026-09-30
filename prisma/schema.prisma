@@ -71,57 +71,57 @@ enum UserRole {
 // ─── Property / Rooms ─────────────────────────────────────────────────────
 
 model Hotel {
-  id                 String   @id @default(cuid())
-  name               String
-  description        String?
-  address            String?
-  latitude           Float?
-  longitude          Float?
-  distanceFromYala   Float?
-  category           String?  // e.g. Budget, Comfort, Premium
-  facilities         String[]
-  images             String[]
-  active             Boolean  @default(true)
-  
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  address          String?
+  latitude         Float?
+  longitude        Float?
+  distanceFromYala Float?
+  category         String? // e.g. Budget, Comfort, Premium
+  facilities       String[]
+  images           String[]
+  active           Boolean  @default(true)
+
   // Provider integration
   providerConnectionId String?
-  externalId         String?
+  externalId           String?
 
-  roomTypes          RoomType[]
-  bookings           Booking[]
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  roomTypes RoomType[]
+  bookings  Booking[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model HotelProviderConnection {
-  id                 String   @id @default(cuid())
-  provider           String   // e.g. "SITEMINDER"
+  id                 String    @id @default(cuid())
+  provider           String // e.g. "SITEMINDER"
   externalPropertyId String
-  status             String   // e.g. "ACTIVE", "DISCONNECTED"
-  credentials        Json?    // e.g. { "username": "...", "password": "..." }
+  status             String // e.g. "ACTIVE", "DISCONNECTED"
+  credentials        Json? // e.g. { "username": "...", "password": "..." }
   lastSyncAt         DateTime?
   metadata           Json?
-  
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model RoomType {
-  id             String   @id @default(cuid())
-  hotelId        String?
-  hotel          Hotel?   @relation(fields: [hotelId], references: [id])
-  externalId     String?
-  name           String   // e.g. "Deluxe Tent", "Premium Suite"
-  description    String?
-  maxCapacity    Int
-  pricePerNight  Float
-  active         Boolean  @default(true)
-  images         String[]
-  
-  ratePlans      RatePlan[]
-  rooms          Room[]
-  bookings       Booking[]
-  createdAt      DateTime @default(now())
+  id            String   @id @default(cuid())
+  hotelId       String?
+  hotel         Hotel?   @relation(fields: [hotelId], references: [id])
+  externalId    String?
+  name          String // e.g. "Deluxe Tent", "Premium Suite"
+  description   String?
+  maxCapacity   Int
+  pricePerNight Float
+  active        Boolean  @default(true)
+  images        String[]
+
+  ratePlans RatePlan[]
+  rooms     Room[]
+  bookings  Booking[]
+  createdAt DateTime   @default(now())
 }
 
 model RatePlan {
@@ -135,8 +135,8 @@ model RatePlan {
   cancellationPolicy String?
   active             Boolean  @default(true)
 
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Room {
@@ -159,55 +159,55 @@ enum RoomStatus {
 // ─── Bookings ─────────────────────────────────────────────────────────────
 
 model Booking {
-  id              String        @id @default(cuid())
-  ref             String        @unique  // e.g. YD-2026-0001
-  bookingAttemptId String?      @unique  // Idempotency key
-  user            User?         @relation(fields: [userId], references: [id])
-  userId          String?
+  id               String  @id @default(cuid())
+  ref              String  @unique // e.g. YD-2026-0001
+  bookingAttemptId String? @unique // Idempotency key
+  user             User?   @relation(fields: [userId], references: [id])
+  userId           String?
 
   // Guest info (for walk-in / non-registered guests)
-  guestName       String
-  guestEmail      String
-  guestPhone      String
-  guestCountry    String
+  guestName    String
+  guestEmail   String
+  guestPhone   String
+  guestCountry String
 
-  hotel           String        @default("Yala Diary")
-  hotelRef        Hotel?        @relation(fields: [hotelId], references: [id])
-  hotelId         String?
-  
+  hotel    String  @default("Yala Diary")
+  hotelRef Hotel?  @relation(fields: [hotelId], references: [id])
+  hotelId  String?
+
   externalReservationId String? // ID from Channel Manager
 
-  roomType        RoomType      @relation(fields: [roomTypeId], references: [id])
-  roomTypeId      String
-  ratePlanId      String?
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id])
+  roomTypeId String
+  ratePlanId String?
 
-  room            Room?         @relation(fields: [roomId], references: [id])
-  roomId          String?
+  room   Room?   @relation(fields: [roomId], references: [id])
+  roomId String?
 
-  checkIn         DateTime
-  checkOut        DateTime
-  nights          Int
-  adults          Int           @default(1)
-  children        Int           @default(0)
+  checkIn  DateTime
+  checkOut DateTime
+  nights   Int
+  adults   Int      @default(1)
+  children Int      @default(0)
 
-  status          BookingStatus @default(DRAFT)
-  paymentStatus   PaymentStatus @default(UNPAID)
+  status        BookingStatus @default(DRAFT)
+  paymentStatus PaymentStatus @default(UNPAID)
 
   // Financials
-  roomRevenue     Float
-  addOnRevenue    Float         @default(0)
-  totalRevenue    Float
-  currency        String        @default("USD")
+  roomRevenue  Float
+  addOnRevenue Float  @default(0)
+  totalRevenue Float
+  currency     String @default("USD")
 
-  addOns          BookingAddOn[]
+  serviceBookings ServiceBooking[]
   safariBookings  SafariBooking[]
 
   specialRequests String?
   promoCode       String?
 
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  events          BookingEvent[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  events    BookingEvent[]
 }
 
 enum BookingStatus {
@@ -233,85 +233,115 @@ model BookingEvent {
   id        String   @id @default(cuid())
   bookingId String
   booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  status    String   // Old or new status
-  action    String   // e.g. PAYMENT_SUCCESS, SITEMINDER_SYNC, SYNC_FAILED
+  status    String // Old or new status
+  action    String // e.g. PAYMENT_SUCCESS, SITEMINDER_SYNC, SYNC_FAILED
   metadata  Json?
   createdAt DateTime @default(now())
 }
 
-model AddOnService {
-  id          String         @id @default(cuid())
+// ─── Safari Packages & Services ───────────────────────────────────────────
+
+model SafariPackage {
+  id          String            @id @default(cuid())
   name        String
-  description String?
-  price       Float
-  category    AddOnCategory
-  active      Boolean        @default(true)
-  bookings    BookingAddOn[]
+  type        SafariPackageType
+  startTime   String
+  endTime     String
+  basePrice   Float
+  pricingType PricingType
+  inclusions  String[]
+  isActive    Boolean           @default(true)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  safariBookings SafariBooking[]
 }
 
-enum AddOnCategory {
-  SAFARI
-  FOOD
-  SPA
-  TRANSPORT
-  OTHER
+enum SafariPackageType {
+  MORNING
+  AFTERNOON
+  FULL_DAY
+  PRIVATE
 }
 
-model BookingAddOn {
-  id          String       @id @default(cuid())
-  booking     Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  bookingId   String
-  addOn       AddOnService @relation(fields: [addOnId], references: [id])
-  addOnId     String
-  quantity    Int          @default(1)
-  price       Float
+enum PricingType {
+  PER_JEEP
+  PER_PERSON
 }
 
-// ─── Safari Slots ─────────────────────────────────────────────────────────
+model ExtraService {
+  id           String               @id @default(cuid())
+  name         String
+  description  String?
+  category     String
+  pricingModel PricingModel
+  basePrice    Float                @default(0)
+  perKmRate    Float?
+  isActive     Boolean              @default(true)
 
-model SafariSlot {
-  id        String          @id @default(cuid())
-  date      DateTime
-  slotType  SafariSlotType
-  capacity  Int             @default(6)
-  guide     String?
-  bookings  SafariBooking[]
-  createdAt DateTime        @default(now())
+  bookings ServiceBooking[]
 }
 
-enum SafariSlotType {
-  AM
-  PM
+
+enum PricingModel {
+  FLAT_RATE
+  PER_KM
+  PER_PERSON
 }
 
 model SafariBooking {
-  id        String     @id @default(cuid())
-  slot      SafariSlot @relation(fields: [slotId], references: [id])
-  slotId    String
-  booking   Booking    @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  packageId String
+  package   SafariPackage @relation(fields: [packageId], references: [id])
+
+  date   DateTime
+  guests Int      @default(1)
+
+  pickupLocation String?
+  requiresPickup Boolean @default(false)
+}
+
+model ServiceBooking {
+  id        String  @id @default(cuid())
   bookingId String
-  guests    Int        @default(1)
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  serviceId String
+  service   ExtraService @relation(fields: [serviceId], references: [id])
+
+  quantity Int @default(1)
+
+  distanceKm      Float?
+  pickupLocation  String?
+  dropOffLocation String?
+
+  specialRequests String?
+
+  totalPrice Float
 }
 
 // ─── Settings / Configuration ─────────────────────────────────────────────
 
 model HotelProfile {
-  id                 String   @id @default(cuid())
-  hotelName          String   @default("Yala Diary")
-  address            String
-  phone              String
-  email              String
-  website            String
-  checkInTime        String   @default("14:00")
-  checkOutTime       String   @default("11:00")
-  
-  // Notification Preferences
-  notifyNewBooking   Boolean  @default(true)
-  notifyCancellation Boolean  @default(true)
-  notifyCheckIn      Boolean  @default(true)
-  notifyPayment      Boolean  @default(true)
+  id           String @id @default(cuid())
+  hotelName    String @default("Yala Diary")
+  address      String
+  phone        String
+  email        String
+  website      String
+  checkInTime  String @default("14:00")
+  checkOutTime String @default("11:00")
 
-  updatedAt          DateTime @updatedAt
+  // Notification Preferences
+  notifyNewBooking   Boolean @default(true)
+  notifyCancellation Boolean @default(true)
+  notifyCheckIn      Boolean @default(true)
+  notifyPayment      Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
 }
 
 // ─── Notifications ────────────────────────────────────────────────────────

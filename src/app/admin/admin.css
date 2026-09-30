@@ -1028,6 +1028,52 @@ table.admin-table {
   .booking-detail-grid { grid-template-columns: 1fr; }
 }
 
+/* ─── Forms ──────────────────────────────────── */
+.admin-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--dash-muted);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+
+.admin-input {
+  width: 100%;
+  background: var(--dash-surface-2);
+  border: 1px solid var(--dash-border);
+  color: var(--dash-text);
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.admin-input:focus {
+  border-color: var(--dash-accent);
+  box-shadow: 0 0 0 3px rgba(228, 244, 219, 0.1);
+}
+
+.admin-input::placeholder {
+  color: rgba(244, 253, 248, 0.2);
+}
+
+select.admin-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(244,253,248,0.4)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+textarea.admin-input {
+  resize: vertical;
+  min-height: 80px;
+}
+
 @media (max-width: 768px) {
   .admin-sidebar { display: none; }
   .admin-main { margin-left: 0; }
