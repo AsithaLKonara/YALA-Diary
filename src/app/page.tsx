@@ -15,6 +15,7 @@ const ExploreYala = dynamic(() => import("@/components/sections/ExploreYala"));
 const FAQ = dynamic(() => import("@/components/sections/FAQ"));
 const FinalConversion = dynamic(() => import("@/components/sections/FinalConversion"));
 const Footer = dynamic(() => import("@/components/Footer"));
+const FloatingWhatsApp = dynamic(() => import("@/components/ui/FloatingWhatsApp"));
 
 export default async function Home() {
   const activePackages = await SafariPackageService.listActivePackages();
@@ -34,6 +35,7 @@ export default async function Home() {
       <FAQ />
       <FinalConversion />
       <Footer />
+      <FloatingWhatsApp />
     </>
   );
 }
