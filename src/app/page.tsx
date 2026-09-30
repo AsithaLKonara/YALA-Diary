@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
 import Hero from "@/components/Hero";
+import { SafariPackageService } from "@/modules/packages/services/SafariPackageService";
 import "./sections.css";
 
 const TrustBar = dynamic(() => import("@/components/sections/TrustBar"));
@@ -15,13 +16,15 @@ const FAQ = dynamic(() => import("@/components/sections/FAQ"));
 const FinalConversion = dynamic(() => import("@/components/sections/FinalConversion"));
 const Footer = dynamic(() => import("@/components/Footer"));
 
-export default function Home() {
+export default async function Home() {
+  const activePackages = await SafariPackageService.listActivePackages();
+
   return (
     <>
       <Hero />
       <TrustBar />
       <WhyYala />
-      <SafariExperiences />
+      <SafariExperiences packages={activePackages} />
       <Wildlife />
       <JourneyTimeline />
       <WhyBookUs />

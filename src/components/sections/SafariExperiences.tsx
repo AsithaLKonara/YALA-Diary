@@ -35,8 +35,9 @@ const EXPERIENCES = [
   }
 ];
 
-export default function SafariExperiences() {
+export default function SafariExperiences({ packages }: { packages?: any[] }) {
   const { formatPrice } = useCurrency();
+  const displayPackages = packages && packages.length > 0 ? packages : EXPERIENCES;
 
   return (
     <section className="experiences-section section-padding">
@@ -44,21 +45,28 @@ export default function SafariExperiences() {
         <h2 className="section-title">Safari Experiences</h2>
       </div>
       <div className="experiences-grid">
-        {EXPERIENCES.map((exp, idx) => (
-          <div key={idx} className="experience-card" style={{ backgroundImage: `url(${exp.image})` }}>
-            <div className="experience-overlay">
-              <div className="experience-content">
-                <h3>{exp.title}</h3>
-                <p>{exp.desc}</p>
-                <div className="experience-meta">
-                  <span>{exp.duration}</span>
-                  <span>From {formatPrice(exp.price)}</span>
+        {displayPackages.map((exp: any, idx: number) => {
+          const image = exp.images?.[0] || exp.image || "/images/assets/leapords/519f7d6a-069a-4628-8711-2dd4b07647bc.jpg";
+          const title = exp.name || exp.title;
+          const desc = exp.type ? `Experience the wild during the ${exp.type.toLowerCase()}.` : exp.desc;
+          const duration = exp.startTime && exp.endTime ? `${exp.startTime} - ${exp.endTime}` : exp.duration;
+          
+          return (
+            <div key={exp.id || idx} className="experience-card" style={{ backgroundImage: `url(${image})` }}>
+              <div className="experience-overlay">
+                <div className="experience-content">
+                  <h3>{title}</h3>
+                  <p>{desc}</p>
+                  <div className="experience-meta">
+                    <span>{duration}</span>
+                    <span>From {formatPrice(exp.basePrice || exp.price)}</span>
+                  </div>
+                  <Link href={`/safaris/${exp.id || 'default'}`} className="view-btn" style={{ display: 'inline-block' }}>View Safari →</Link>
                 </div>
-                <Link href="/book" className="view-btn" style={{ display: 'inline-block' }}>View Safari →</Link>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

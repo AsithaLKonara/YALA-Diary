@@ -22,6 +22,16 @@ export class SafariPackageService {
   }
 
   /**
+   * Retrieves a single package by ID with extra services included.
+   */
+  static async getPackageById(id: string) {
+    return prisma.safariPackage.findUnique({
+      where: { id },
+      include: { extraServices: true }
+    });
+  }
+
+  /**
    * Creates a new safari package.
    */
   static async createPackage({
