@@ -443,8 +443,34 @@ function Step4({ data, updateData, back, next }: any) {
     setError("");
 
     try {
-      // Mock successful booking creation since backend isn't ready for safari packages booking schema yet
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const userId = (session?.user as any)?.id || null;
+      
+      const payload = {
+        isSafariOnly: true,
+        safariPackageId: data.safariPackage?.id,
+        checkIn: data.checkIn,
+        checkOut: data.checkOut,
+        adults: data.adults,
+        children: data.children,
+        addons: data.addons.map((a: any) => ({
+          id: a.id,
+          pricingModel: a.pricingModel,
+          basePrice: a.basePrice
+        })),
+        guest: data.guest,
+        userId,
+        safariPrice,
+        totalPrice: total
+      };
+
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to create booking");
+
       next(); // Go to success page
     } catch (err: any) {
       setError(err.message);

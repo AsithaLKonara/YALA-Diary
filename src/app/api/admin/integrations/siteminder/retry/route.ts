@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     const errors = [];
 
     for (const booking of stuckBookings) {
-      if (!booking.hotelRef?.externalId || !booking.roomType.externalId) {
+      if (!booking.hotelRef?.externalId || !booking.roomType?.externalId) {
         errors.push(`Booking ${booking.id}: Missing mapping for hotel or room type`);
         continue;
       }
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
         const reservation = await client.createReservation({
           hotelId: booking.hotelRef.externalId,
-          roomTypeId: booking.roomType.externalId,
+          roomTypeId: booking.roomType?.externalId || "UNKNOWN",
           ratePlanId: booking.ratePlanId || "UNKNOWN",
           checkIn: booking.checkIn.toISOString().split('T')[0],
           checkOut: booking.checkOut.toISOString().split('T')[0],

@@ -131,7 +131,7 @@ export default async function GuestDashboard() {
                 </div>
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>Room</span>
-                  <span className={styles.detailValue}>{nextBooking.roomType.name}</span>
+                  <span className={styles.detailValue}>{nextBooking.roomType?.name}</span>
                 </div>
               </div>
             </div>

@@ -1,15 +1,18 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
 import AdminTopbar from "@/components/admin/Topbar";
 import { Loader2 } from "lucide-react";
 import NewBookingPanel from "@/components/admin/NewBookingPanel";
+import BookingSidePanel from "@/components/admin/BookingSidePanel";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "all", label: "All Statuses" },
   { value: "PENDING", label: "Pending" },
   { value: "CONFIRMED", label: "Confirmed" },
+  { value: "PICKED_UP", label: "Picked Up" },
+  { value: "TRIP_STARTED", label: "Trip Started" },
+  { value: "TRIP_COMPLETED", label: "Trip Completed" },
   { value: "CHECKED_IN", label: "Checked In" },
   { value: "CHECKED_OUT", label: "Checked Out" },
   { value: "CANCELLED", label: "Cancelled" },
@@ -18,9 +21,13 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Pending",
   CONFIRMED: "Confirmed",
+  PICKED_UP: "Picked Up",
+  TRIP_STARTED: "Trip Started",
+  TRIP_COMPLETED: "Trip Completed",
   CHECKED_IN: "Checked In",
   CHECKED_OUT: "Checked Out",
   CANCELLED: "Cancelled",
+  FAILED: "Failed",
 };
 
 export default function BookingsPage() {
@@ -31,6 +38,7 @@ export default function BookingsPage() {
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [showNewBooking, setShowNewBooking] = useState(false);
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -128,7 +136,7 @@ export default function BookingsPage() {
                 <tr>
                   <th>Ref</th>
                   <th>Guest</th>
-                  <th>Room</th>
+                  <th>Safari / Room</th>
                   <th>Dates</th>
                   <th>Guests</th>
                   <th>Status</th>
@@ -153,17 +161,20 @@ export default function BookingsPage() {
                   paginated.map((b) => (
                     <tr key={b.id}>
                       <td>
-                        <Link href={`/admin/bookings/${b.id}`} className="ref-link">
+                        <button
+                          onClick={() => setSelectedBookingId(b.id)}
+                          style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--primary)", fontWeight: 600, fontSize: "0.875rem" }}
+                        >
                           {b.ref}
-                        </Link>
+                        </button>
                       </td>
                       <td>
                         <div style={{ fontWeight: 500 }}>{b.guestName}</div>
                         <div className="muted">{b.guestCountry}</div>
                       </td>
                       <td>
-                        <div>{b.room?.number || "Unassigned"}</div>
-                        <div className="muted">{b.roomType?.name}</div>
+                        <div>{b.safariBookings?.[0]?.package?.name || b.room?.number || "Unassigned"}</div>
+                        <div className="muted">{b.safariBookings?.[0] ? b.safariBookings[0].package?.type?.replace("_", " ") : b.roomType?.name}</div>
                       </td>
                       <td>
                         <div>{new Date(b.checkIn).toLocaleDateString()}</div>
@@ -183,12 +194,12 @@ export default function BookingsPage() {
                       </td>
                       <td>
                         <div className="row-actions">
-                          <Link href={`/admin/bookings/${b.id}`} className="row-action-btn">View</Link>
-                          {b.status === "PENDING" && (
-                            <button className="row-action-btn" onClick={() => handleUpdateStatus(b.id, "CONFIRMED")} style={{ color: "var(--dash-success)", borderColor: "rgba(76,175,114,0.3)" }}>
-                              Confirm
-                            </button>
-                          )}
+                          <button
+                            className="row-action-btn"
+                            onClick={() => setSelectedBookingId(b.id)}
+                          >
+                            View
+                          </button>
                           {(b.status === "PENDING" || b.status === "CONFIRMED") && (
                             <button className="row-action-btn" onClick={() => handleUpdateStatus(b.id, "CANCELLED")} style={{ color: "var(--dash-danger)", borderColor: "rgba(224,82,82,0.3)" }}>
                               Cancel
@@ -248,6 +259,7 @@ export default function BookingsPage() {
         </div>
       </div>
 
+      {/* Side Panels */}
       {showNewBooking && (
         <NewBookingPanel
           onClose={() => setShowNewBooking(false)}
@@ -257,12 +269,24 @@ export default function BookingsPage() {
           }}
         />
       )}
+
+      <BookingSidePanel
+        bookingId={selectedBookingId}
+        onClose={() => setSelectedBookingId(null)}
+        onStatusChange={fetchBookings}
+      />
+
+      <style>{`
+        @keyframes slideInRight {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+      `}</style>
     </>
   );
 }
 
 function StatusBadge({ status, label }: { status: string; label: string }) {
-  // Map enum statuses to CSS classes (pending, confirmed, checked_in, checked_out, cancelled)
   const cls = status.toLowerCase();
   return <span className={`status-badge ${cls}`}>{label}</span>;
 }

@@ -177,8 +177,8 @@ model Booking {
 
   externalReservationId String? // ID from Channel Manager
 
-  roomType   RoomType @relation(fields: [roomTypeId], references: [id])
-  roomTypeId String
+  roomType   RoomType? @relation(fields: [roomTypeId], references: [id])
+  roomTypeId String?
   ratePlanId String?
 
   room   Room?   @relation(fields: [roomId], references: [id])
@@ -218,6 +218,9 @@ enum BookingStatus {
   CONFIRMED
   CHECKED_IN
   CHECKED_OUT
+  PICKED_UP
+  TRIP_STARTED
+  TRIP_COMPLETED
   CANCELLED
   FAILED
 }
@@ -235,6 +238,7 @@ model BookingEvent {
   booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   status    String // Old or new status
   action    String // e.g. PAYMENT_SUCCESS, SITEMINDER_SYNC, SYNC_FAILED
+  note      String? // Optional human-readable note added by admin
   metadata  Json?
   createdAt DateTime @default(now())
 }

@@ -6,9 +6,13 @@ import { randomUUID } from "crypto";
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const { hotelId, checkIn, checkOut, adults, children, roomTypeId, ratePlanId, addons, guest, userId, price } = data;
+    const { 
+      isSafariOnly, safariPackageId, 
+      hotelId, checkIn, checkOut, adults, children, roomTypeId, ratePlanId, 
+      addons, guest, userId, price 
+    } = data;
 
-    if (!checkIn || !checkOut || !roomTypeId || !guest || !guest.name || !guest.email || !hotelId) {
+    if (!checkIn || !checkOut || !guest || !guest.name || !guest.email) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -16,6 +20,78 @@ export async function POST(req: Request) {
     const checkOutDate = new Date(checkOut);
     const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)));
     
+    // Validate addons and calculate revenue
+    let addOnRevenue = 0;
+    const addOnRecords = [];
+    if (addons && Array.isArray(addons)) {
+      for (const addon of addons) {
+        const addonId = typeof addon === 'string' ? addon : addon.id;
+        const addonService = await prisma.extraService.findUnique({ where: { id: addonId }});
+        if (addonService) {
+          const cost = addonService.pricingModel === "PER_PERSON" ? addonService.basePrice * (adults + children) : addonService.basePrice;
+          addOnRevenue += cost;
+          addOnRecords.push({ serviceId: addonService.id, quantity: 1, totalPrice: cost });
+        }
+      }
+    }
+
+    const ref = `YD-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
+    const bookingAttemptId = randomUUID(); // Idempotency key
+
+    if (isSafariOnly) {
+      if (!safariPackageId) return NextResponse.json({ error: "Missing Safari Package ID" }, { status: 400 });
+      
+      const pkg = await prisma.safariPackage.findUnique({ where: { id: safariPackageId } });
+      if (!pkg) return NextResponse.json({ error: "Invalid Safari Package" }, { status: 400 });
+
+      const calculatedSafariPrice = pkg.pricingType === "PER_PERSON" ? pkg.basePrice * (adults + children) : pkg.basePrice;
+      const totalRev = calculatedSafariPrice + addOnRevenue;
+
+      let booking = await prisma.booking.create({
+        data: {
+          ref,
+          bookingAttemptId,
+          userId: userId || null,
+          guestName: guest.name,
+          guestEmail: guest.email,
+          guestPhone: guest.phone || "",
+          guestCountry: guest.country || "Unknown",
+          specialRequests: guest.requests || "",
+          checkIn: checkInDate,
+          checkOut: checkOutDate,
+          nights,
+          adults,
+          children,
+          roomRevenue: calculatedSafariPrice, // Treat safari price as base room revenue
+          addOnRevenue,
+          totalRevenue: totalRev,
+          status: "CONFIRMED",
+          paymentStatus: "PAID",
+          serviceBookings: {
+            create: addOnRecords
+          },
+          safariBookings: {
+            create: {
+              packageId: safariPackageId,
+              date: checkInDate,
+              guests: adults + children,
+            }
+          }
+        }
+      });
+
+      await prisma.bookingEvent.create({
+        data: { bookingId: booking.id, status: "CONFIRMED", action: "SAFARI_BOOKING_CREATED", metadata: { attemptId: bookingAttemptId } }
+      });
+
+      return NextResponse.json({ success: true, booking }, { status: 201 });
+    }
+
+    // --- Original Hotel Logic ---
+    if (!hotelId || !roomTypeId) {
+      return NextResponse.json({ error: "Missing hotel or room type ID" }, { status: 400 });
+    }
+
     // Validate hotel and rate plan
     const hotel = await prisma.hotel.findUnique({ where: { id: hotelId }});
     if (!hotel || !hotel.externalId) {
@@ -26,24 +102,8 @@ export async function POST(req: Request) {
     const ratePlan = ratePlanId ? await prisma.ratePlan.findUnique({ where: { id: ratePlanId }}) : null;
     if (!roomType || !roomType.externalId) return NextResponse.json({ error: "Invalid room type" }, { status: 400 });
 
-    const roomRevenue = price || (roomType.pricePerNight * nights); // Trusting frontend price here, real app would re-validate or use a passed token
-
-    // Validate addons and calculate revenue
-    let addOnRevenue = 0;
-    const addOnRecords = [];
-    if (addons && Array.isArray(addons)) {
-      for (const addonId of addons) {
-        const addonService = await prisma.extraService.findUnique({ where: { id: addonId }});
-        if (addonService) {
-          addOnRevenue += addonService.basePrice;
-          addOnRecords.push({ serviceId: addonService.id, quantity: 1, totalPrice: addonService.basePrice });
-        }
-      }
-    }
-
+    const roomRevenue = price || (roomType.pricePerNight * nights); 
     const totalRevenue = roomRevenue + addOnRevenue;
-    const ref = `YD-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`;
-    const bookingAttemptId = randomUUID(); // Idempotency key
 
     // 1. Create booking in DRAFT state
     let booking = await prisma.booking.create({

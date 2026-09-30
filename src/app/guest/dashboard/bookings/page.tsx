@@ -138,7 +138,7 @@ export default async function GuestBookingsPage() {
                     </td>
                     <td>
                       <div style={{ color: "var(--dash-text)", fontSize: "0.8rem", fontWeight: 500 }}>
-                        {booking.roomType.name}
+                        {booking.roomType?.name}
                       </div>
                       <div className="muted">
                         {booking.adults} Adults, {booking.children} Children
