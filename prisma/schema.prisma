@@ -320,9 +320,9 @@ model SafariBooking {
   requiresPickup Boolean @default(false)
 
   entranceTicketType     String?  // "SELF_ARRANGED" | "COMPANY_PROVIDED"
-  entranceTicketBlock    String?  // e.g. "Block 1 (Palatupana)"
-  entranceTicketDuration String?  // "Half-day" | "Full-day"
-  entranceTicketPrice    Float?   // Scraped price assigned to the booking
+  entranceTicketId       String?
+  entranceTicket         EntranceTicket? @relation(fields: [entranceTicketId], references: [id])
+  entranceTicketPrice    Float?   // Total ticket price calculated
 }
 
 model ServiceBooking {
@@ -376,10 +376,15 @@ model Notification {
   createdAt DateTime @default(now())
 }
 
-model ParkTicketPrice {
-  id        String   @id @default(cuid())
-  blockName String   // e.g. "Block 1 (Palatupana)"
-  duration  String   // "Half-day" or "Full-day"
-  priceLkr  Float    // e.g. 21450
-  updatedAt DateTime @updatedAt
+model EntranceTicket {
+  id         String   @id @default(cuid())
+  name       String   // e.g. "Block 1 (Palatupana) - Half-day"
+  type       SafariPackageType @default(MORNING)
+  adultPrice Float    // Price per adult
+  childPrice Float    // Price per child (under 13)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  safariBookings SafariBooking[]
 }

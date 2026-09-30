@@ -96,6 +96,8 @@ export async function POST(req: Request) {
               adultsCount: adults,
               childrenCount: children,
               entranceTicketType: entranceTicketType || null,
+              entranceTicketId: data.entranceTicketId || null,
+              entranceTicketPrice: data.entranceTicketPrice || null,
               pricingSnapshot: data.pricingSnapshot || null,
             }
           }
@@ -169,6 +171,20 @@ export async function POST(req: Request) {
       });
       // Webhook won't fire, so we could send email here if we want, but for now we'll assume there is always a price.
       return NextResponse.json({ success: true, booking }, { status: 201 });
+    }
+
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_mock') {
+      console.warn("Using mock Stripe checkout session because STRIPE_SECRET_KEY is not set.");
+      // Automatically confirm the booking for local testing
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: "CONFIRMED", paymentStatus: "PAID" }
+      });
+      
+      return NextResponse.json({ 
+        success: true, 
+        checkoutUrl: `${origin}/book/success?session_id=mock_session_${booking.id}` 
+      }, { status: 201 });
     }
 
     const session = await stripe.checkout.sessions.create({

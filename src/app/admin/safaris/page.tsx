@@ -5,6 +5,7 @@ import AdminTopbar from "@/components/admin/Topbar";
 import { Loader2, Edit2, Trash2 } from "lucide-react";
 import NewPackagePanel from "@/components/admin/NewPackagePanel";
 import NewExtraServicePanel from "@/components/admin/NewExtraServicePanel";
+import TicketPanel from "@/components/admin/TicketPanel";
 import CustomConfirmDialog from "@/components/admin/CustomConfirmDialog";
 import { getDisplayMinPrice, getDisplayMinPriceLabel, ServicePricingOptions } from "@/lib/pricing";
 
@@ -12,12 +13,15 @@ export default function PackagesPage() {
   const [activeTab, setActiveTab] = useState("packages");
   const [packages, setPackages] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewPackage, setShowNewPackage] = useState(false);
   const [showNewService, setShowNewService] = useState(false);
+  const [showNewTicket, setShowNewTicket] = useState(false);
   const [editPackageData, setEditPackageData] = useState<any>(null);
   const [editServiceData, setEditServiceData] = useState<any>(null);
-  const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, type: 'package' | 'service', id: string, name: string}>({isOpen: false, type: 'package', id: "", name: ""});
+  const [editTicketData, setEditTicketData] = useState<any>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, type: 'package' | 'service' | 'ticket', id: string, name: string}>({isOpen: false, type: 'package', id: "", name: ""});
   const [alertDialog, setAlertDialog] = useState<{isOpen: boolean, message: string, type: 'danger' | 'info' | 'warning'}>({isOpen: false, message: "", type: "danger"});
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -28,13 +32,15 @@ export default function PackagesPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [pkgRes, srvRes] = await Promise.all([
+      const [pkgRes, srvRes, tktRes] = await Promise.all([
         fetch("/api/admin/safari-packages"),
-        fetch("/api/admin/extra-services")
+        fetch("/api/admin/extra-services"),
+        fetch("/api/admin/tickets")
       ]);
-      const [pkgData, srvData] = await Promise.all([pkgRes.json(), srvRes.json()]);
+      const [pkgData, srvData, tktData] = await Promise.all([pkgRes.json(), srvRes.json(), tktRes.json()]);
       if (pkgData.packages) setPackages(pkgData.packages);
       if (srvData.services) setServices(srvData.services);
+      if (Array.isArray(tktData)) setTickets(tktData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -47,7 +53,9 @@ export default function PackagesPage() {
     try {
       const url = confirmDialog.type === 'package' 
         ? `/api/admin/safari-packages/${confirmDialog.id}`
-        : `/api/admin/extra-services/${confirmDialog.id}`;
+        : confirmDialog.type === 'service' 
+        ? `/api/admin/extra-services/${confirmDialog.id}`
+        : `/api/admin/tickets/${confirmDialog.id}`;
         
       const res = await fetch(url, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
@@ -72,6 +80,11 @@ export default function PackagesPage() {
     setShowNewService(true);
   };
 
+  const handleEditTicket = (tkt: any) => {
+    setEditTicketData(tkt);
+    setShowNewTicket(true);
+  };
+
   const openNewPackage = () => {
     setEditPackageData(null);
     setShowNewPackage(true);
@@ -80,6 +93,11 @@ export default function PackagesPage() {
   const openNewService = () => {
     setEditServiceData(null);
     setShowNewService(true);
+  };
+
+  const openNewTicket = () => {
+    setEditTicketData(null);
+    setShowNewTicket(true);
   };
 
   return (
@@ -94,8 +112,10 @@ export default function PackagesPage() {
           <div className="admin-header-actions">
             {activeTab === "packages" ? (
               <button onClick={openNewPackage} className="btn-primary">Add Package</button>
-            ) : (
+            ) : activeTab === "services" ? (
               <button onClick={openNewService} className="btn-primary">Add Service</button>
+            ) : (
+              <button onClick={openNewTicket} className="btn-primary">Add Ticket</button>
             )}
           </div>
         </div>
@@ -120,6 +140,16 @@ export default function PackagesPage() {
             }}
           >
             Extra Services
+          </button>
+          <button 
+            onClick={() => setActiveTab("tickets")}
+            style={{ 
+              background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0', fontSize: '1rem',
+              color: activeTab === "tickets" ? 'var(--dash-text)' : 'var(--dash-muted)',
+              borderBottom: activeTab === "tickets" ? '2px solid var(--primary)' : '2px solid transparent'
+            }}
+          >
+            Entrance Tickets
           </button>
         </div>
 
@@ -191,7 +221,7 @@ export default function PackagesPage() {
               ))}
             </div>
           )
-        ) : (
+        ) : activeTab === "services" ? (
           services.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px", color: "var(--dash-muted)", backgroundColor: "var(--dash-card)", borderRadius: 12 }}>
               No extra services created yet. Click "Add Service" to start.
@@ -280,6 +310,53 @@ export default function PackagesPage() {
               ))}
             </div>
           )
+        ) : (
+          tickets.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px", color: "var(--dash-muted)", backgroundColor: "var(--dash-card)", borderRadius: 12 }}>
+              No entrance tickets created yet. Click "Add Ticket" to start.
+            </div>
+          ) : (
+            <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+              {tickets.map((tkt) => (
+                <div key={tkt.id} style={{ 
+                  backgroundColor: 'var(--dash-card)', 
+                  border: '1px solid var(--dash-border)', 
+                  borderRadius: '12px', 
+                  padding: '20px',
+                  display: 'flex', flexDirection: 'column', gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{tkt.name}</h3>
+                      <span style={{ 
+                        fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', alignSelf: 'flex-start',
+                        backgroundColor: tkt.isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        color: tkt.isActive ? '#22c55e' : '#ef4444'
+                      }}>
+                        {tkt.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button onClick={() => handleEditTicket(tkt)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dash-muted)', padding: '4px' }}>
+                        <Edit2 size={16} />
+                      </button>
+                      <button onClick={() => setConfirmDialog({ isOpen: true, type: 'ticket', id: tkt.id, name: tkt.name })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div style={{ fontSize: '1rem', color: 'var(--dash-text)', marginTop: '8px' }}>
+                    Adult: LKR {tkt.adultPrice?.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '1rem', color: 'var(--dash-text)' }}>
+                    Child: LKR {tkt.childPrice?.toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
         )}
       </div>
 
@@ -300,6 +377,17 @@ export default function PackagesPage() {
           onClose={() => setShowNewService(false)}
           onSuccess={() => {
             setShowNewService(false);
+            fetchData();
+          }}
+        />
+      )}
+
+      {showNewTicket && (
+        <TicketPanel
+          editData={editTicketData}
+          onClose={() => setShowNewTicket(false)}
+          onSuccess={() => {
+            setShowNewTicket(false);
             fetchData();
           }}
         />

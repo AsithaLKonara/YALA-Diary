@@ -709,13 +709,44 @@ function Step3({ data, updateData, next, back }: any) {
 // STEP 4: Tickets
 // -----------------------------------------------------------------------------
 function Step4({ data, updateData, back, next }: any) {
-  const handleSelectOption = (option: "SELF_ARRANGED" | "COMPANY_PROVIDED") => {
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+
+  useEffect(() => {
+    async function fetchTickets() {
+      setLoadingTickets(true);
+      try {
+        const res = await fetch("/api/booking/tickets");
+        if (res.ok) {
+          const data = await res.json();
+          setTickets(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingTickets(false);
+      }
+    }
+    fetchTickets();
+  }, []);
+
+  const handleSelectType = (option: "SELF_ARRANGED" | "COMPANY_PROVIDED") => {
     updateData({ 
       entranceTicketType: option,
-      entranceTicketBlock: undefined, 
-      entranceTicketDuration: undefined, 
+      entranceTicketId: undefined, 
       entranceTicketPrice: undefined
     });
+  };
+
+  const handleSelectTicket = (ticketId: string) => {
+    const tkt = tickets.find(t => t.id === ticketId);
+    if (tkt) {
+      const price = (tkt.adultPrice * data.adults) + (tkt.childPrice * data.children);
+      updateData({
+        entranceTicketId: ticketId,
+        entranceTicketPrice: price
+      });
+    }
   };
 
   return (
@@ -752,7 +783,7 @@ function Step4({ data, updateData, back, next }: any) {
 
         <div className="form-group" style={{ marginBottom: 30 }}>
           <div 
-            onClick={() => handleSelectOption("SELF_ARRANGED")}
+            onClick={() => handleSelectType("SELF_ARRANGED")}
             style={{ 
               padding: 20, 
               border: `1px solid ${data.entranceTicketType === "SELF_ARRANGED" ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`, 
@@ -777,7 +808,7 @@ function Step4({ data, updateData, back, next }: any) {
           </div>
 
           <div 
-            onClick={() => handleSelectOption("COMPANY_PROVIDED")}
+            onClick={() => handleSelectType("COMPANY_PROVIDED")}
             style={{ 
               padding: 20, 
               border: `1px solid ${data.entranceTicketType === "COMPANY_PROVIDED" ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`, 
@@ -789,10 +820,47 @@ function Step4({ data, updateData, back, next }: any) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff' }}>Arrange tickets for me</h4>
-                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>We'll purchase the official park tickets on your behalf. (Cost will be added to your final bill locally)</p>
+                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>We'll purchase the official park tickets on your behalf. (Cost will be added to your final bill)</p>
               </div>
               {data.entranceTicketType === "COMPANY_PROVIDED" && <Check size={24} color="var(--primary)" />}
             </div>
+
+            {data.entranceTicketType === "COMPANY_PROVIDED" && (
+              <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                {loadingTickets ? (
+                  <p style={{ color: 'var(--dash-muted)' }}>Loading available tickets...</p>
+                ) : tickets.filter(t => !data.safariPackage || t.type === data.safariPackage.type).length === 0 ? (
+                  <p style={{ color: 'var(--dash-muted)' }}>No tickets available for this safari time range right now.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', marginBottom: 5 }}>Select your ticket block:</p>
+                    {tickets.filter(t => !data.safariPackage || t.type === data.safariPackage.type).map(tkt => (
+                      <div 
+                        key={tkt.id}
+                        onClick={(e) => { e.stopPropagation(); handleSelectTicket(tkt.id); }}
+                        style={{
+                          padding: 15,
+                          border: `1px solid ${data.entranceTicketId === tkt.id ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`,
+                          borderRadius: 6,
+                          background: data.entranceTicketId === tkt.id ? 'rgba(154,205,50,0.2)' : 'rgba(0,0,0,0.2)',
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 500 }}>{tkt.name}</div>
+                          <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                            Adult: LKR {tkt.adultPrice} × {data.adults} | Child: LKR {tkt.childPrice} × {data.children}
+                          </div>
+                        </div>
+                        <div style={{ fontWeight: 600, color: 'var(--primary)' }}>
+                          LKR {((tkt.adultPrice * data.adults) + (tkt.childPrice * data.children)).toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -801,7 +869,7 @@ function Step4({ data, updateData, back, next }: any) {
           <button 
             className="btn-primary" 
             onClick={next}
-            disabled={!data.entranceTicketType}
+            disabled={!data.entranceTicketType || (data.entranceTicketType === "COMPANY_PROVIDED" && !data.entranceTicketId)}
           >
             Continue to Checkout
           </button>
@@ -845,7 +913,8 @@ function Step5({ data, updateData, back, next }: any) {
   });
 
   const addonsTotal = addonBreakdowns.reduce((sum: number, b: any) => sum + (b.valid ? b.totalPrice : 0), 0);
-  const total = (safariPriceInfo.valid ? safariPriceInfo.totalPrice : 0) + addonsTotal;
+  const ticketTotal = data.entranceTicketPrice || 0;
+  const total = (safariPriceInfo.valid ? safariPriceInfo.totalPrice : 0) + addonsTotal + ticketTotal;
 
   const handleSubmit = async () => {
     if (!data.guest.name || !data.guest.email) { setError("Please fill in your name and email."); return; }
@@ -871,14 +940,15 @@ function Step5({ data, updateData, back, next }: any) {
         safariPrice: safariPriceInfo.totalPrice,
         totalPrice: total,
         entranceTicketType: data.entranceTicketType,
-        entranceTicketBlock: data.entranceTicketBlock,
-        entranceTicketDuration: data.entranceTicketDuration,
+        entranceTicketId: data.entranceTicketId,
         entranceTicketPrice: data.entranceTicketPrice,
         pricingSnapshot: {
           safari: safariPriceInfo,
           addons: addonBreakdowns.map((b: any) => ({ id: b.addon.id, name: b.addon.name, price: b.totalPrice, lines: b.lines })),
           ticket: {
-            type: data.entranceTicketType
+            type: data.entranceTicketType,
+            id: data.entranceTicketId,
+            price: data.entranceTicketPrice
           }
         },
       };
@@ -969,8 +1039,8 @@ function Step5({ data, updateData, back, next }: any) {
         {data.entranceTicketType && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#ddd', fontWeight: 500, marginBottom: 4 }}>
-              <span>Park Entrance Ticket</span>
-              <span>{data.entranceTicketType === "COMPANY_PROVIDED" ? 'Company Provided' : 'Self Arranged'}</span>
+              <span>Park Entrance Ticket ({data.entranceTicketType === "COMPANY_PROVIDED" ? 'Company Provided' : 'Self Arranged'})</span>
+              <span>{data.entranceTicketType === "COMPANY_PROVIDED" ? formatPrice(data.entranceTicketPrice || 0) : '—'}</span>
             </div>
           </div>
         )}
