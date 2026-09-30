@@ -3,23 +3,39 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { CalendarDays, MapPin, Search } from "lucide-react";
+import Link from "next/link";
 import { format } from "date-fns";
 
-export default async function GuestBookingsPage() {
+export default async function GuestBookingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
   const session = await auth();
   
   if (!session || !session.user?.email) {
     redirect("/auth");
   }
 
+  const page = parseInt(params.page || "1", 10);
+  const take = 10;
+  const skip = (page - 1) * take;
+
+  const whereClause = {
+    OR: [
+      { guestEmail: session.user.email },
+      { userId: session.user.id }
+    ]
+  };
+
+  const totalBookings = await prisma.booking.count({ where: whereClause });
+
   // Fetch bookings for this guest
   const bookings = await prisma.booking.findMany({
-    where: {
-      OR: [
-        { guestEmail: session.user.email },
-        { userId: session.user.id }
-      ]
-    },
+    where: whereClause,
+    take,
+    skip,
     include: {
       roomType: true,
       hotelRef: true,
@@ -163,6 +179,30 @@ export default async function GuestBookingsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {totalBookings > take && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24, padding: "0 16px" }}>
+            <div style={{ fontSize: "0.85rem", color: "var(--dash-muted)" }}>
+              Showing {skip + 1} to {Math.min(skip + take, totalBookings)} of {totalBookings}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {page > 1 ? (
+                <Link href={`/guest/dashboard/bookings?page=${page - 1}`} className="btn-secondary" style={{ padding: "8px 16px" }}>
+                  Previous
+                </Link>
+              ) : (
+                <button className="btn-secondary" disabled style={{ padding: "8px 16px", opacity: 0.5 }}>Previous</button>
+              )}
+              {skip + take < totalBookings ? (
+                <Link href={`/guest/dashboard/bookings?page=${page + 1}`} className="btn-secondary" style={{ padding: "8px 16px" }}>
+                  Next
+                </Link>
+              ) : (
+                <button className="btn-secondary" disabled style={{ padding: "8px 16px", opacity: 0.5 }}>Next</button>
+              )}
+            </div>
           </div>
         )}
       </div>

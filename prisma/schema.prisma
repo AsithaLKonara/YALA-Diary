@@ -197,6 +197,7 @@ model Booking {
   roomRevenue  Float
   addOnRevenue Float  @default(0)
   totalRevenue Float
+  amountPaid   Float  @default(0)
   currency     String @default("USD")
 
   serviceBookings ServiceBooking[]

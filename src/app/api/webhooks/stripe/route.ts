@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       // Update Safari Booking to Confirmed & Paid
       booking = await prisma.booking.update({
         where: { id: bookingId },
-        data: { status: "CONFIRMED", paymentStatus: "PAID" },
+        data: { status: "CONFIRMED", paymentStatus: "PAID", amountPaid: booking.totalRevenue },
         include: {
           safariBookings: { include: { package: true } },
           serviceBookings: { include: { service: true } },
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       // Update Hotel Booking to Payment Success
       booking = await prisma.booking.update({
         where: { id: bookingId },
-        data: { status: "PAYMENT_SUCCESS", paymentStatus: "PAID" },
+        data: { status: "PAYMENT_SUCCESS", paymentStatus: "PAID", amountPaid: booking.totalRevenue },
         include: {
           safariBookings: { include: { package: true } },
           serviceBookings: { include: { service: true } },

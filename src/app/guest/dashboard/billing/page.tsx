@@ -3,23 +3,44 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { CreditCard, Download, ArrowUpRight, CheckCircle2, Clock } from "lucide-react";
+import Link from "next/link";
 import { format } from "date-fns";
 
-export default async function GuestBillingPage() {
+export default async function GuestBillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
   const session = await auth();
   
   if (!session || !session.user?.email) {
     redirect("/auth");
   }
 
-  // Fetch bookings for this guest
+  const whereClause = {
+    OR: [
+      { guestEmail: session.user.email },
+      { userId: session.user.id }
+    ]
+  };
+
+  // Fetch ALL bookings to calculate metrics
+  const allBookings = await prisma.booking.findMany({
+    where: whereClause,
+    select: { paymentStatus: true, status: true, totalRevenue: true, amountPaid: true }
+  });
+
+  const page = parseInt(params.page || "1", 10);
+  const take = 10;
+  const skip = (page - 1) * take;
+  const totalBookings = await prisma.booking.count({ where: whereClause });
+
+  // Fetch paginated bookings for the table
   const bookings = await prisma.booking.findMany({
-    where: {
-      OR: [
-        { guestEmail: session.user.email },
-        { userId: session.user.id }
-      ]
-    },
+    where: whereClause,
+    take,
+    skip,
     include: {
       hotelRef: true,
     },
@@ -32,13 +53,14 @@ export default async function GuestBillingPage() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
   };
 
-  const totalSpent = bookings.reduce((sum, b) => {
-    if (b.paymentStatus === "PAID") return sum + b.totalRevenue;
-    return sum;
+  const totalSpent = allBookings.reduce((sum, b) => {
+    return sum + (b.amountPaid || 0);
   }, 0);
 
-  const outstandingBalance = bookings.reduce((sum, b) => {
-    if (b.paymentStatus === "UNPAID" && b.status !== "CANCELLED" && b.status !== "FAILED") return sum + b.totalRevenue;
+  const outstandingBalance = allBookings.reduce((sum, b) => {
+    if (b.status !== "CANCELLED" && b.status !== "FAILED") {
+      return sum + Math.max(0, b.totalRevenue - (b.amountPaid || 0));
+    }
     return sum;
   }, 0);
 
@@ -154,6 +176,30 @@ export default async function GuestBillingPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {totalBookings > take && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24, padding: "0 16px" }}>
+            <div style={{ fontSize: "0.85rem", color: "var(--dash-muted)" }}>
+              Showing {skip + 1} to {Math.min(skip + take, totalBookings)} of {totalBookings}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {page > 1 ? (
+                <Link href={`/guest/dashboard/billing?page=${page - 1}`} className="btn-secondary" style={{ padding: "8px 16px" }}>
+                  Previous
+                </Link>
+              ) : (
+                <button className="btn-secondary" disabled style={{ padding: "8px 16px", opacity: 0.5 }}>Previous</button>
+              )}
+              {skip + take < totalBookings ? (
+                <Link href={`/guest/dashboard/billing?page=${page + 1}`} className="btn-secondary" style={{ padding: "8px 16px" }}>
+                  Next
+                </Link>
+              ) : (
+                <button className="btn-secondary" disabled style={{ padding: "8px 16px", opacity: 0.5 }}>Next</button>
+              )}
+            </div>
           </div>
         )}
       </div>

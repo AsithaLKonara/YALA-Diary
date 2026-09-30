@@ -42,8 +42,7 @@ export default async function GuestDashboard() {
 
   // Calculate metrics
   const totalSpent = pastBookings.reduce((sum, b) => {
-    if (b.paymentStatus === "PAID") return sum + b.totalRevenue;
-    return sum;
+    return sum + (b.amountPaid || 0);
   }, 0);
 
   const formatCurrency = (amount: number, currency: string = "USD") => {

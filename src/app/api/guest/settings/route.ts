@@ -37,6 +37,10 @@ export async function PUT(req: Request) {
 
     // Password Update Logic
     if (newPassword) {
+      if (newPassword.length < 8) {
+        return NextResponse.json({ error: "New password must be at least 8 characters long" }, { status: 400 });
+      }
+
       if (!user.password) {
         // User registered via OAuth originally, we can just set a new password
         updateData.password = await bcrypt.hash(newPassword, 10);
