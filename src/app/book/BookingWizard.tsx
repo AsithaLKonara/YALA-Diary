@@ -366,34 +366,139 @@ function Step3({ data, updateData, next, back }: any) {
     }
   };
 
+  const selectedCount = data.addons.length;
+
   return (
     <div className="booking-panel">
-      <h2 className="booking-title">Enhance Your Safari</h2>
-      <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: 30 }}>Add personalized services for your {data.safariPackage?.name || "safari"}.</p>
-      
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 className="booking-title" style={{ marginBottom: 6 }}>Enhance Your Safari</h2>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>
+            Personalize your <strong style={{ color: 'var(--primary)' }}>{data.safariPackage?.name || "safari"}</strong> with optional add-ons.
+          </p>
+        </div>
+        {selectedCount > 0 && (
+          <div style={{
+            background: 'rgba(154,205,50,0.12)', border: '1px solid rgba(154,205,50,0.3)',
+            borderRadius: 8, padding: '8px 16px', fontSize: '0.85rem',
+            color: 'var(--primary)', fontWeight: 600, flexShrink: 0
+          }}>
+            {selectedCount} service{selectedCount !== 1 ? 's' : ''} selected
+          </div>
+        )}
+      </div>
+
       {loading ? (
-        <div style={{ padding: 40, textAlign: "center" }}>
+        <div style={{ padding: 60, textAlign: "center" }}>
           <Loader2 size={32} className="spinner" style={{ margin: '0 auto', color: 'var(--primary)' }} />
         </div>
       ) : availableAddons.length === 0 ? (
         <div style={{ textAlign: "center", padding: 40, background: "rgba(255,255,255,0.05)", borderRadius: 12 }}>
-          <p>No extra services available.</p>
+          <p style={{ color: 'rgba(255,255,255,0.5)' }}>No extra services available.</p>
         </div>
       ) : (
-        <div className="addon-list">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+          gap: '20px',
+          marginTop: 20
+        }}>
           {availableAddons.map((a: any) => {
-            const isSelected = data.addons.find((ad: any) => ad.id === a.id);
+            const isSelected = !!data.addons.find((ad: any) => ad.id === a.id);
+            const image = a.images?.[0] || null;
+            const pricingLabel = a.pricingModel === 'PER_PERSON' ? 'per person' : a.pricingModel === 'PER_KM' ? 'per km' : 'flat rate';
+
             return (
-              <div key={a.id} className={`addon-card ${isSelected ? 'selected' : ''}`} onClick={() => toggleAddon(a)}>
-                <div className="addon-info">
-                  <h4>{a.name}</h4>
-                  <p>{a.description}</p>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: 4, display: 'inline-block' }}>{a.category}</span>
+              <div
+                key={a.id}
+                onClick={() => toggleAddon(a)}
+                style={{
+                  borderRadius: 16,
+                  border: `2px solid ${isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}`,
+                  background: isSelected ? 'rgba(154,205,50,0.06)' : 'rgba(0,0,0,0.25)',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  transition: 'all 0.25s ease',
+                  position: 'relative',
+                  boxShadow: isSelected ? '0 0 0 1px rgba(154,205,50,0.3), 0 8px 24px rgba(154,205,50,0.1)' : 'none',
+                }}
+              >
+                {/* Image */}
+                <div style={{ position: 'relative', height: 160, background: '#111', overflow: 'hidden' }}>
+                  {image ? (
+                    <Image
+                      src={image}
+                      alt={a.name}
+                      fill
+                      style={{ objectFit: 'cover', opacity: isSelected ? 0.8 : 0.55, transition: 'opacity 0.25s' }}
+                    />
+                  ) : (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      height: '100%', fontSize: '2.5rem', opacity: 0.3
+                    }}>✦</div>
+                  )}
+                  {/* Gradient overlay */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)'
+                  }} />
+                  {/* Category badge */}
+                  <div style={{
+                    position: 'absolute', top: 10, left: 10,
+                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 20, padding: '3px 10px',
+                    fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)',
+                    letterSpacing: '0.05em', textTransform: 'uppercase'
+                  }}>
+                    {a.category}
+                  </div>
+                  {/* Checkbox */}
+                  <div style={{
+                    position: 'absolute', top: 10, right: 10,
+                    width: 26, height: 26, borderRadius: 6,
+                    border: `2px solid ${isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.3)'}`,
+                    background: isSelected ? 'var(--primary)' : 'rgba(0,0,0,0.5)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.2s'
+                  }}>
+                    {isSelected && <Check size={14} color="#000" strokeWidth={3} />}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
-                  <span className="addon-price">+{formatPrice(a.basePrice)} <span style={{fontSize: '0.8rem', fontWeight: 400, color: 'rgba(255,255,255,0.5)'}}>/{a.pricingModel.replace('_', ' ')}</span></span>
-                  <div style={{ width: 24, height: 24, border: '1px solid rgba(255,255,255,0.3)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isSelected ? 'var(--primary)' : 'transparent' }}>
-                    {isSelected && <Check size={16} color="#000" />}
+
+                {/* Content */}
+                <div style={{ padding: '16px 18px 18px' }}>
+                  <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6, color: '#fff' }}>{a.name}</h4>
+                  {a.description && (
+                    <p style={{
+                      fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)',
+                      lineHeight: 1.55, marginBottom: 14,
+                      display: '-webkit-box', WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                    }}>
+                      {a.description}
+                    </p>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>
+                        {formatPrice(a.basePrice)}
+                      </span>
+                      <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 4 }}>
+                        / {pricingLabel}
+                      </span>
+                    </div>
+                    <div style={{
+                      fontSize: '0.78rem', fontWeight: 600, padding: '5px 12px',
+                      borderRadius: 20,
+                      background: isSelected ? 'rgba(154,205,50,0.15)' : 'rgba(255,255,255,0.05)',
+                      color: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.5)',
+                      border: `1px solid ${isSelected ? 'rgba(154,205,50,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                      transition: 'all 0.2s'
+                    }}>
+                      {isSelected ? '✓ Added' : '+ Add'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -402,15 +507,16 @@ function Step3({ data, updateData, next, back }: any) {
         </div>
       )}
 
-      <div className="booking-actions">
+      <div className="booking-actions" style={{ marginTop: 30 }}>
         <button className="btn-secondary" onClick={back}>← Back</button>
         <button className="btn-primary" onClick={next}>
-          {data.addons.length > 0 ? "Add Selected & Continue" : "Skip & Continue"} →
+          {selectedCount > 0 ? `Add ${selectedCount} Service${selectedCount !== 1 ? 's' : ''} & Continue` : "Skip & Continue"} →
         </button>
       </div>
     </div>
   );
 }
+
 
 // -----------------------------------------------------------------------------
 // STEP 4: Checkout
