@@ -32,7 +32,7 @@ export default function SafariExperiences({ packages }: { packages?: any[] }) {
   }, [isScrollable]);
 
   return (
-    <section className="experiences-section section-padding">
+    <section className="experiences-section ">
       <div className="experiences-header" style={!isScrollable ? { textAlign: 'center' } : {}}>
         <h2 className="section-title">Safari Experiences</h2>
       </div>
