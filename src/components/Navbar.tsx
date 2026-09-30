@@ -52,7 +52,7 @@ export default function Navbar() {
         <div className="header-container">
           {/* Logo Group */}
         <Link href="/" className="header-logo-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Image src="/logo.png" alt="Yala Diary Logo" width={60} height={60} priority style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
+          <Image src="/logo.png" alt="Yala Diary Logo" width={60} height={60} priority style={{ objectFit: 'contain' }} className="header-logo-img" />
           <span className="logo-main" style={{ fontSize: '1.2rem' }}>YALA DIARY</span>
         </Link>
 
@@ -118,7 +118,7 @@ export default function Navbar() {
     {/* Mobile Menu Overlay */}
     <div className={`nav-overlay ${isOpen ? "open" : ""}`}>
       <div className="mobile-menu-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <Image src="/logo.png" alt="Yala Diary Logo" width={45} height={45} priority style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
+        <Image src="/logo.png" alt="Yala Diary Logo" width={45} height={45} priority style={{ objectFit: 'contain' }} className="mobile-logo-img" />
         <span className="logo-main" style={{ fontSize: '1.2rem' }}>YALA</span>
       </div>
 
