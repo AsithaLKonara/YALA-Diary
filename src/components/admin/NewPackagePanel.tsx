@@ -125,7 +125,7 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
       display: 'flex', justifyContent: 'flex-end'
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        width: '520px', backgroundColor: '#0d1f14',
+        width: '700px', backgroundColor: '#0d1f14',
         height: '100%', borderLeft: '1px solid var(--dash-border)',
         display: 'flex', flexDirection: 'column'
       }}>
@@ -286,6 +286,12 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
                           value={pricingRules.extraPersonRate ?? ""}
                           onChange={e => updateRules({ extraPersonRate: parseFloat(e.target.value) || undefined })} />
                       </div>
+                      <div style={{ flex: 1 }}>
+                        <label className="admin-label" style={{ fontSize: '0.7rem' }}>Max Extra Guests</label>
+                        <input type="number" min={1} step={1} className="admin-input" placeholder="e.g. 1"
+                          value={pricingRules.maxExtraCount ?? ""}
+                          onChange={e => updateRules({ maxExtraCount: parseInt(e.target.value) || undefined })} />
+                      </div>
                     </div>
                     <p style={{ fontSize: '0.72rem', color: 'var(--dash-muted)', marginTop: 6, lineHeight: 1.4 }}>
                       If the group size exceeds the highest tier's max pax, this rate applies per extra person.
@@ -318,6 +324,12 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
                       <input type="number" min={0} step={0.01} className="admin-input" placeholder="0.00"
                         value={pricingRules.extraPersonRate ?? ""}
                         onChange={e => updateRules({ extraPersonRate: parseFloat(e.target.value) || undefined })} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label className="admin-label">Max Extra Guests</label>
+                      <input type="number" min={1} step={1} className="admin-input" placeholder="e.g. 1"
+                        value={pricingRules.maxExtraCount ?? ""}
+                        onChange={e => updateRules({ maxExtraCount: parseInt(e.target.value) || undefined })} />
                     </div>
                   </div>
                   <p style={{ fontSize: '0.78rem', color: 'var(--dash-muted)', marginTop: 6 }}>

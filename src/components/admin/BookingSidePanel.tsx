@@ -35,6 +35,7 @@ interface FullBooking {
     id: string;
     date: string;
     guests: number;
+    entranceTicketType?: string;
     package: {
       name: string;
       type: string;
@@ -230,6 +231,13 @@ export default function BookingSidePanel({ bookingId, onClose, onStatusChange }:
                       <div style={{ fontSize: "0.8rem", color: "var(--dash-muted)", marginTop: 4 }}>
                         Date: {new Date(sb.date).toLocaleDateString()} · Guests: {sb.guests}
                       </div>
+                      {sb.entranceTicketType && (
+                        <div style={{ fontSize: "0.8rem", color: "var(--dash-muted)", marginTop: 4 }}>
+                          Tickets: <span style={{ color: sb.entranceTicketType === 'COMPANY_PROVIDED' ? 'var(--primary)' : '#fff' }}>
+                            {sb.entranceTicketType === 'COMPANY_PROVIDED' ? 'Arranged by Company' : 'Self Arranged'}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </Section>

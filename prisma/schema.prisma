@@ -313,10 +313,16 @@ model SafariBooking {
   guests        Int      @default(1)
   adultsCount   Int      @default(1)
   childrenCount Int      @default(0)
+  jeepCount     Int      @default(1)
   pricingSnapshot Json?  // Snapshot of price calculation at booking time
 
   pickupLocation String?
   requiresPickup Boolean @default(false)
+
+  entranceTicketType     String?  // "SELF_ARRANGED" | "COMPANY_PROVIDED"
+  entranceTicketBlock    String?  // e.g. "Block 1 (Palatupana)"
+  entranceTicketDuration String?  // "Half-day" | "Full-day"
+  entranceTicketPrice    Float?   // Scraped price assigned to the booking
 }
 
 model ServiceBooking {
@@ -368,4 +374,12 @@ model Notification {
   type      String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model ParkTicketPrice {
+  id        String   @id @default(cuid())
+  blockName String   // e.g. "Block 1 (Palatupana)"
+  duration  String   // "Half-day" or "Full-day"
+  priceLkr  Float    // e.g. 21450
+  updatedAt DateTime @updatedAt
 }

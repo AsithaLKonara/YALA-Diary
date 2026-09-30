@@ -30,6 +30,7 @@ export interface SafariPricingRules {
   // Extra Person Charge (For Flat/Tiered strategies when exceeding included limit)
   baseCapacity?: number;
   extraPersonRate?: number;
+  maxExtraCount?: number;
 
   // Universal
   maxCapacity: number;
@@ -59,12 +60,13 @@ export function calculateSafariPrice(
       validationError: `Minimum ${rules.minGuests} guest${rules.minGuests !== 1 ? "s" : ""} required.`,
     };
   }
-  if (totalGuests > rules.maxCapacity) {
+  const maxAllowed = rules.baseCapacity && rules.maxExtraCount !== undefined ? rules.baseCapacity + rules.maxExtraCount : rules.maxCapacity;
+  if (totalGuests > maxAllowed) {
     return {
       totalPrice: 0,
       lines: [],
       valid: false,
-      validationError: `Maximum capacity is ${rules.maxCapacity} guests.`,
+      validationError: `Maximum capacity is ${maxAllowed} guests.`,
     };
   }
 
@@ -73,7 +75,7 @@ export function calculateSafariPrice(
   if (rules.strategyType === "PRIVATE_FLAT") {
     let price = rules.privateRate ?? 0;
     const baseCap = rules.baseCapacity ?? rules.maxCapacity;
-    lines.push({ label: `Private Jeep (up to ${baseCap} pax)`, amount: price });
+    lines.push({ label: `Private Safari (Flat Rate, up to ${baseCap} pax)`, amount: price });
     
     if (totalGuests > baseCap && rules.extraPersonRate) {
       const extraGuests = totalGuests - baseCap;

@@ -4,6 +4,7 @@ import { SiteMinderClient } from "@/modules/connectivity/providers/siteminder/cl
 import { randomUUID } from "crypto";
 
 import { calculateSafariPrice, calculateServicePrice } from "@/lib/pricing";
+import { RATES } from "@/lib/currency";
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +12,8 @@ export async function POST(req: Request) {
     const { 
       isSafariOnly, safariPackageId, 
       hotelId, checkIn, checkOut, adults, children, roomTypeId, ratePlanId, 
-      addons, guest, userId, price, pricingSnapshot
+      addons, guest, userId, price, pricingSnapshot,
+      entranceTicketType, entranceTicketBlock, entranceTicketDuration, entranceTicketPrice
     } = data;
 
     if (!checkIn || !checkOut || !guest || !guest.name || !guest.email) {
@@ -59,7 +61,6 @@ export async function POST(req: Request) {
       } else {
         calculatedSafariPrice = pkg.pricingType === "PER_PERSON" ? pkg.basePrice * (adults + children) : pkg.basePrice;
       }
-      
       const totalRev = calculatedSafariPrice + addOnRevenue;
 
       let booking = await prisma.booking.create({
@@ -92,6 +93,7 @@ export async function POST(req: Request) {
               guests: adults + children,
               adultsCount: adults,
               childrenCount: children,
+              entranceTicketType: entranceTicketType || null,
               pricingSnapshot: data.pricingSnapshot || null,
             }
           }

@@ -1,22 +1,13 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-
-export type CurrencyCode = "USD" | "EUR" | "GBP" | "LKR" | "AUD";
+import { CurrencyCode, RATES } from "@/lib/currency";
 
 interface CurrencyContextType {
   currency: CurrencyCode;
   setCurrency: (code: CurrencyCode) => void;
   formatPrice: (usdPrice: number) => string;
 }
-
-const RATES: Record<CurrencyCode, number> = {
-  USD: 1,
-  EUR: 0.92,
-  GBP: 0.79,
-  LKR: 310,
-  AUD: 1.52,
-};
 
 const SYMBOLS: Record<CurrencyCode, string> = {
   USD: "$",

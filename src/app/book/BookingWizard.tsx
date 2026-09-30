@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { Calendar, MapPin, Users, ChevronDown, Check, Loader2, Info } from "lucide-react";
+import { Calendar, MapPin, Users, ChevronDown, Check, Loader2, Info, AlertTriangle } from "lucide-react";
 import { useCurrency } from "@/context/CurrencyContext";
+import { RATES } from "@/lib/currency";
 import { useSession } from "next-auth/react";
 import { calculateSafariPrice, getDisplayMinPrice, getDisplayMinPriceLabel, calculateServicePrice } from "@/lib/pricing";
 import type { SafariPricingRules, ServicePricingOptions } from "@/lib/pricing";
 import CustomDatePicker from "@/components/ui/CustomDatePicker";
+import PackageDetailsModal from "./PackageDetailsModal";
+import ExtraServiceModal from "./ExtraServiceModal";
 
 interface ExtraService {
   id: string;
@@ -47,6 +50,10 @@ interface BookingData {
   safariPackage: SafariPackage | null;
   addons: ExtraService[];
   guest: Guest;
+  entranceTicketType?: "SELF_ARRANGED" | "COMPANY_PROVIDED";
+  entranceTicketBlock?: string;
+  entranceTicketDuration?: string;
+  entranceTicketPrice?: number;
 }
 
 export default function BookingWizard() {
@@ -85,13 +92,14 @@ export default function BookingWizard() {
   return (
     <div className="wizard-container">
       {/* Progress Bar */}
-      {step < 5 && (
+      {step < 6 && (
         <div className="booking-progress">
           {[
             { num: 1, label: "Reservations" },
             { num: 2, label: "Select Safari" },
             { num: 3, label: "Enhance Safari" },
-            { num: 4, label: "Checkout" }
+            { num: 4, label: "Tickets" },
+            { num: 5, label: "Checkout" }
           ].map((s, idx) => (
             <React.Fragment key={s.num}>
               <div className={`step-indicator ${step === s.num ? "active" : ""} ${step > s.num ? "completed" : ""}`}>
@@ -100,7 +108,7 @@ export default function BookingWizard() {
                 </div>
                 <span className="step-label">{s.label}</span>
               </div>
-              {idx < 3 && <div className="step-connector" />}
+              {idx < 4 && <div className="step-connector" />}
             </React.Fragment>
           ))}
         </div>
@@ -111,8 +119,9 @@ export default function BookingWizard() {
         {step === 1 && <Step1 data={bookingData} updateData={updateData} next={() => setStep(2)} />}
         {step === 2 && <Step2 data={bookingData} updateData={updateData} next={() => setStep(3)} back={() => setStep(1)} availablePackages={availablePackages} setAvailablePackages={setAvailablePackages} />}
         {step === 3 && <Step3 data={bookingData} updateData={updateData} next={() => setStep(4)} back={() => setStep(2)} />}
-        {step === 4 && <Step4 data={bookingData} updateData={updateData} back={() => setStep(3)} next={() => setStep(5)} />}
-        {step === 5 && <Step5 />}
+        {step === 4 && <Step4 data={bookingData} updateData={updateData} next={() => setStep(5)} back={() => setStep(3)} />}
+        {step === 5 && <Step5 data={bookingData} updateData={updateData} back={() => setStep(4)} next={() => setStep(6)} />}
+        {step === 6 && <Step6 />}
       </div>
     </div>
   );
@@ -211,6 +220,7 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
   const [searchLoading, setSearchLoading] = useState(false);
   const [error, setError] = useState("");
   const [expandedPricing, setExpandedPricing] = useState<string | null>(null);
+  const [selectedPackageModal, setSelectedPackageModal] = useState<any>(null);
 
   useEffect(() => {
     if (availablePackages.length === 0) {
@@ -238,7 +248,7 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
         : pkg.basePrice;
       return { 
         totalPrice: price, 
-        lines: [{ label: pkg.pricingType === "PER_PERSON" ? `${data.adults + data.children} guests × $${pkg.basePrice}` : "Flat jeep rate", amount: price }], 
+        lines: [{ label: pkg.pricingType === "PER_PERSON" ? `${data.adults + data.children} guests × $${pkg.basePrice}` : `Flat jeep rate × $${pkg.basePrice}`, amount: price }], 
         valid: true, 
         validationError: undefined 
       };
@@ -273,6 +283,11 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
             <input type="number" min="0" className="form-input" value={data.children}
               onChange={(e) => updateData({ children: parseInt(e.target.value) || 0 })} style={{ fontSize: '0.9rem' }} />
           </div>
+          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <label className="form-label" style={{ fontSize: '0.8rem' }}>Jeeps (Private)</label>
+            <input type="number" min={Math.max(1, Math.ceil((data.adults + data.children) / 6))} className="form-input" value={data.jeeps}
+              onChange={(e) => updateData({ jeeps: Math.max(1, parseInt(e.target.value) || 1) })} style={{ fontSize: '0.9rem' }} />
+          </div>
         </div>
 
         {/* Live price hint */}
@@ -300,7 +315,12 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
           </div>
         ) : (
           <div className="room-grid">
-            {availablePackages.map((pkg: any) => {
+            {availablePackages.filter((pkg: any) => {
+              const rules = pkg.pricingRules as any;
+              if (!rules) return true;
+              const totalGuests = data.adults + data.children;
+              return totalGuests >= rules.minGuests && totalGuests <= rules.maxCapacity;
+            }).map((pkg: any) => {
               const image = pkg.images?.[0] || "/images/assets/leapords/519f7d6a-069a-4628-8711-2dd4b07647bc.jpg";
               const priceInfo = getPriceInfo(pkg);
               const rules = pkg.pricingRules as any;
@@ -368,14 +388,23 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
                       )}
                     </div>
 
-                    <button
-                      className="btn-primary"
-                      disabled={!priceInfo.valid}
-                      style={{ width: '100%', display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center', opacity: priceInfo.valid ? 1 : 0.4 }}
-                      onClick={() => priceInfo.valid && handleSelect(pkg)}
-                    >
-                      {priceInfo.valid ? 'Select Safari' : priceInfo.validationError}
-                    </button>
+                    <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+                      <button
+                        className="btn-secondary"
+                        style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center' }}
+                        onClick={() => setSelectedPackageModal(pkg)}
+                      >
+                        View Details
+                      </button>
+                      <button
+                        className="btn-primary"
+                        disabled={!priceInfo.valid}
+                        style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: 8, alignItems: 'center', opacity: priceInfo.valid ? 1 : 0.4 }}
+                        onClick={() => priceInfo.valid && handleSelect(pkg)}
+                      >
+                        {priceInfo.valid ? 'Select' : 'Unavailable'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -383,6 +412,17 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
           </div>
         )}
       </div>
+      {selectedPackageModal && (
+        <PackageDetailsModal 
+          pkg={selectedPackageModal} 
+          onClose={() => setSelectedPackageModal(null)} 
+          onSelect={() => {
+            const rules = selectedPackageModal.pricingRules as any;
+            const valid = !rules || calculateSafariPrice(rules, data.adults, data.children).valid;
+            if (valid) handleSelect(selectedPackageModal);
+          }} 
+        />
+      )}
     </div>
   );
 }
@@ -394,6 +434,7 @@ function Step3({ data, updateData, next, back }: any) {
   const { formatPrice } = useCurrency();
   const [availableAddons, setAvailableAddons] = useState<ExtraService[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedServiceModal, setSelectedServiceModal] = useState<any>(null);
 
   // Local state for dropdown selections: addonId -> { dimensionKey: selectedValue }
   const [addonSelections, setAddonSelections] = useState<Record<string, Record<string, string>>>({});
@@ -605,24 +646,52 @@ function Step3({ data, updateData, next, back }: any) {
                         <span style={{ fontSize: '0.85rem', color: 'var(--dash-danger)' }}>Select options to view price</span>
                       )}
                     </div>
-                    <button 
-                      onClick={() => toggleAddon(a, isValid)}
-                      disabled={!isValid}
-                      style={{
-                        fontSize: '0.78rem', fontWeight: 600, padding: '5px 12px', borderRadius: 20, cursor: isValid ? 'pointer' : 'not-allowed',
-                        background: isSelected ? 'rgba(154,205,50,0.15)' : 'rgba(255,255,255,0.05)',
-                        color: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.5)',
-                        border: `1px solid ${isSelected ? 'rgba(154,205,50,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                        transition: 'all 0.2s', opacity: isValid ? 1 : 0.5
-                      }}>
-                      {isSelected ? '✓ Added' : '+ Add'}
-                    </button>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedServiceModal(a); }}
+                        style={{
+                          fontSize: '0.78rem', fontWeight: 600, padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
+                          background: 'rgba(255,255,255,0.05)',
+                          color: 'rgba(255,255,255,0.8)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          transition: 'all 0.2s'
+                        }}>
+                        Details
+                      </button>
+                      <button 
+                        onClick={() => toggleAddon(a, isValid)}
+                        disabled={!isValid}
+                        style={{
+                          fontSize: '0.78rem', fontWeight: 600, padding: '5px 12px', borderRadius: 20, cursor: isValid ? 'pointer' : 'not-allowed',
+                          background: isSelected ? 'rgba(154,205,50,0.15)' : 'rgba(255,255,255,0.05)',
+                          color: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.5)',
+                          border: `1px solid ${isSelected ? 'rgba(154,205,50,0.3)' : 'rgba(255,255,255,0.08)'}`,
+                          transition: 'all 0.2s', opacity: isValid ? 1 : 0.5
+                        }}>
+                        {isSelected ? '✓ Added' : '+ Add'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
             );
           })}
         </div>
+      )}
+
+      {selectedServiceModal && (
+        <ExtraServiceModal 
+          service={selectedServiceModal} 
+          onClose={() => setSelectedServiceModal(null)} 
+          onSelect={() => {
+            const isSelected = data.addons.some((add: any) => add.id === selectedServiceModal.id);
+            if (!isSelected) {
+              const opts = selectedServiceModal.pricingOptions as ServicePricingOptions | null;
+              const isValid = !opts?.dimensions || opts.dimensions.every((d: any) => addonSelections[selectedServiceModal.id]?.[d.key]);
+              toggleAddon(selectedServiceModal, isValid);
+            }
+          }} 
+        />
       )}
 
       <div className="booking-actions" style={{ marginTop: 30 }}>
@@ -637,9 +706,116 @@ function Step3({ data, updateData, next, back }: any) {
 
 
 // -----------------------------------------------------------------------------
-// STEP 4: Checkout
+// STEP 4: Tickets
 // -----------------------------------------------------------------------------
 function Step4({ data, updateData, back, next }: any) {
+  const handleSelectOption = (option: "SELF_ARRANGED" | "COMPANY_PROVIDED") => {
+    updateData({ 
+      entranceTicketType: option,
+      entranceTicketBlock: undefined, 
+      entranceTicketDuration: undefined, 
+      entranceTicketPrice: undefined
+    });
+  };
+
+  return (
+    <div className="booking-panel booking-sidebar-layout">
+      {/* Sidebar Details */}
+      <div className="booking-sidebar">
+        <h3 style={{ fontSize: '1.25rem', marginBottom: '20px', fontWeight: 600 }}>Your Details</h3>
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>Safari Date</div>
+          <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{data.checkIn}</div>
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>Guests</div>
+          <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{data.adults} Adults, {data.children} Children</div>
+        </div>
+        {data.safariPackage && (
+          <div style={{ marginBottom: '15px' }}>
+            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)' }}>Selected Safari</div>
+            <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{data.safariPackage.name}</div>
+          </div>
+        )}
+      </div>
+
+      <div className="booking-main">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
+          <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Info size={20} />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: '#fff' }}>Park Entrance Tickets</h2>
+            <p style={{ color: 'rgba(255,255,255,0.6)', marginTop: 5 }}>All visitors require an entrance ticket for Yala National Park.</p>
+          </div>
+        </div>
+
+        <div className="form-group" style={{ marginBottom: 30 }}>
+          <div 
+            onClick={() => handleSelectOption("SELF_ARRANGED")}
+            style={{ 
+              padding: 20, 
+              border: `1px solid ${data.entranceTicketType === "SELF_ARRANGED" ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`, 
+              borderRadius: 8, 
+              marginBottom: 15, 
+              cursor: 'pointer',
+              background: data.entranceTicketType === "SELF_ARRANGED" ? 'rgba(154,205,50,0.1)' : 'rgba(0,0,0,0.2)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff' }}>I will book my own tickets</h4>
+                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>You can book directly on the official DWC website.</p>
+              </div>
+              {data.entranceTicketType === "SELF_ARRANGED" && <Check size={24} color="var(--primary)" />}
+            </div>
+            {data.entranceTicketType === "SELF_ARRANGED" && (
+              <div style={{ marginTop: 15, fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', padding: 12, background: 'rgba(0,0,0,0.3)', borderRadius: 6 }}>
+                Please ensure you book your tickets for the correct date and time at <a href="https://www.yalasrilanka.lk/yala-safari-ride" target="_blank" style={{ color: 'var(--primary)' }}>yalasrilanka.lk</a>
+              </div>
+            )}
+          </div>
+
+          <div 
+            onClick={() => handleSelectOption("COMPANY_PROVIDED")}
+            style={{ 
+              padding: 20, 
+              border: `1px solid ${data.entranceTicketType === "COMPANY_PROVIDED" ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`, 
+              borderRadius: 8, 
+              cursor: 'pointer',
+              background: data.entranceTicketType === "COMPANY_PROVIDED" ? 'rgba(154,205,50,0.1)' : 'rgba(0,0,0,0.2)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h4 style={{ fontSize: '1.1rem', fontWeight: 600, color: '#fff' }}>Arrange tickets for me</h4>
+                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', marginTop: 4 }}>We'll purchase the official park tickets on your behalf. (Cost will be added to your final bill locally)</p>
+              </div>
+              {data.entranceTicketType === "COMPANY_PROVIDED" && <Check size={24} color="var(--primary)" />}
+            </div>
+          </div>
+        </div>
+
+        <div className="form-actions" style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 20 }}>
+          <button className="btn-secondary" onClick={back}>Back</button>
+          <button 
+            className="btn-primary" 
+            onClick={next}
+            disabled={!data.entranceTicketType}
+          >
+            Continue to Checkout
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// STEP 5: Checkout (formerly Step4)
+// -----------------------------------------------------------------------------
+// --- Step 5: Checkout (formerly Step4) ---
+function Step5({ data, updateData, back, next }: any) {
   const { formatPrice } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -694,9 +870,16 @@ function Step4({ data, updateData, back, next }: any) {
         userId,
         safariPrice: safariPriceInfo.totalPrice,
         totalPrice: total,
+        entranceTicketType: data.entranceTicketType,
+        entranceTicketBlock: data.entranceTicketBlock,
+        entranceTicketDuration: data.entranceTicketDuration,
+        entranceTicketPrice: data.entranceTicketPrice,
         pricingSnapshot: {
           safari: safariPriceInfo,
           addons: addonBreakdowns.map((b: any) => ({ id: b.addon.id, name: b.addon.name, price: b.totalPrice, lines: b.lines })),
+          ticket: {
+            type: data.entranceTicketType
+          }
         },
       };
       const res = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -777,6 +960,16 @@ function Step4({ data, updateData, back, next }: any) {
           ))}
         </div>
 
+        {/* Park Entrance Tickets */}
+        {data.entranceTicketType && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#ddd', fontWeight: 500, marginBottom: 4 }}>
+              <span>Park Entrance Ticket</span>
+              <span>{data.entranceTicketType === "COMPANY_PROVIDED" ? 'Company Provided' : 'Self Arranged'}</span>
+            </div>
+          </div>
+        )}
+
         {/* Add-ons */}
         {addonBreakdowns.map((b: any) => (
           <div key={b.addon.id} style={{ marginBottom: 12 }}>
@@ -817,7 +1010,8 @@ function Step4({ data, updateData, back, next }: any) {
 // -----------------------------------------------------------------------------
 // STEP 5: Success
 // -----------------------------------------------------------------------------
-function Step5() {
+// --- Step 6: Confirmation (formerly Step5) ---
+function Step6() {
   return (
     <div className="booking-panel" style={{ textAlign: 'center', padding: '60px 20px' }}>
       <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(154, 205, 50, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
