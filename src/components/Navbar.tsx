@@ -47,9 +47,10 @@ export default function Navbar() {
   }
 
   return (
-    <header className={`site-header ${isScrolled ? "scrolled" : ""}`}>
-      <div className="header-container">
-        {/* Logo Group */}
+    <>
+      <header className={`site-header ${isScrolled ? "scrolled" : ""}`}>
+        <div className="header-container">
+          {/* Logo Group */}
         <Link href="/" className="header-logo-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Image src="/logo.png" alt="Yala Diary Logo" width={60} height={60} priority style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
           <span className="logo-main" style={{ fontSize: '1.2rem' }}>YALA DIARY</span>
@@ -111,52 +112,53 @@ export default function Navbar() {
           <span className="bar"></span>
           <span className="bar"></span>
         </button>
-
-        {/* Mobile Menu Overlay */}
-        <div className={`nav-overlay ${isOpen ? "open" : ""}`}>
-          <div className="mobile-menu-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Image src="/logo.png" alt="Yala Diary Logo" width={45} height={45} priority style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
-            <span className="logo-main" style={{ fontSize: '1.2rem' }}>YALA</span>
-          </div>
-
-          <nav className="mobile-nav">
-            <Link href="/safari" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Safari</Link>
-            <Link href="/experiences" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Experiences</Link>
-            <Link href="/explore" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Explore Yala</Link>
-            <Link href="/about" className="mobile-nav-link" onClick={() => setIsOpen(false)}>About</Link>
-            <Link href="#contact" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Contact</Link>
-            
-            {session && (role === "ADMIN" || role === "STAFF") && (
-              <Link href="/admin/dashboard" className="mobile-nav-link" style={{ color: 'var(--primary)' }} onClick={() => setIsOpen(false)}>Admin Panel</Link>
-            )}
-            
-            {session ? (
-              <button className="mobile-nav-link" style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', padding: 0 }} onClick={() => { signOut({ callbackUrl: "/" }); setIsOpen(false); }}>Sign Out</button>
-            ) : (
-              <Link href="/auth" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Sign In</Link>
-            )}
-          </nav>
-
-          <div className="mobile-menu-footer">
-            <div className="mobile-currency-row">
-              <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.875rem" }}>CURRENCY</span>
-              <select
-                className="mobile-currency-select"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
-              >
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="LKR">LKR (Rs)</option>
-                <option value="AUD">AUD (A$)</option>
-              </select>
-            </div>
-            <div className="mobile-divider"></div>
-            <Link href="/book" className="mobile-book-btn" onClick={() => setIsOpen(false)}>BOOK YOUR SAFARI</Link>
-          </div>
-        </div>
       </div>
     </header>
+
+    {/* Mobile Menu Overlay */}
+    <div className={`nav-overlay ${isOpen ? "open" : ""}`}>
+      <div className="mobile-menu-header" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Image src="/logo.png" alt="Yala Diary Logo" width={45} height={45} priority style={{ objectFit: 'contain', width: 'auto', height: 'auto' }} />
+        <span className="logo-main" style={{ fontSize: '1.2rem' }}>YALA</span>
+      </div>
+
+      <nav className="mobile-nav">
+        <Link href="/safari" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Safari</Link>
+        <Link href="/experiences" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Experiences</Link>
+        <Link href="/explore" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Explore Yala</Link>
+        <Link href="/about" className="mobile-nav-link" onClick={() => setIsOpen(false)}>About</Link>
+        <Link href="#contact" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Contact</Link>
+        
+        {session && (role === "ADMIN" || role === "STAFF") && (
+          <Link href="/admin/dashboard" className="mobile-nav-link" style={{ color: 'var(--primary)' }} onClick={() => setIsOpen(false)}>Admin Panel</Link>
+        )}
+        
+        {session ? (
+          <button className="mobile-nav-link" style={{ background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', padding: 0 }} onClick={() => { signOut({ callbackUrl: "/" }); setIsOpen(false); }}>Sign Out</button>
+        ) : (
+          <Link href="/auth" className="mobile-nav-link" onClick={() => setIsOpen(false)}>Sign In</Link>
+        )}
+      </nav>
+
+      <div className="mobile-menu-footer">
+        <div className="mobile-currency-row">
+          <span style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.875rem" }}>CURRENCY</span>
+          <select
+            className="mobile-currency-select"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value as CurrencyCode)}
+          >
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="LKR">LKR (Rs)</option>
+            <option value="AUD">AUD (A$)</option>
+          </select>
+        </div>
+        <div className="mobile-divider"></div>
+        <Link href="/book" className="mobile-book-btn" onClick={() => setIsOpen(false)}>BOOK YOUR SAFARI</Link>
+      </div>
+    </div>
+  </>
   );
 }
