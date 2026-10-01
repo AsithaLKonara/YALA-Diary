@@ -403,6 +403,7 @@ export default function PackagesPage() {
         onConfirm={handleDeleteConfirm}
         onCancel={() => setConfirmDialog({ isOpen: false, type: 'package', id: "", name: "" })}
         confirmText={isDeleting ? "Deleting..." : "Delete"}
+        isLoading={isDeleting}
         type="danger"
       />
 

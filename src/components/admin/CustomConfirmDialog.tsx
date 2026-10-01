@@ -10,6 +10,7 @@ interface CustomConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   type?: "danger" | "warning" | "info";
+  isLoading?: boolean;
 }
 
 export default function CustomConfirmDialog({
@@ -21,7 +22,8 @@ export default function CustomConfirmDialog({
   confirmText = "Confirm",
   cancelText = "Cancel",
   type = "danger",
-  showCancel = true
+  showCancel = true,
+  isLoading = false
 }: CustomConfirmDialogProps & { showCancel?: boolean }) {
   if (!isOpen) return null;
 
@@ -63,9 +65,10 @@ export default function CustomConfirmDialog({
           <button 
             className="btn-primary" 
             onClick={onConfirm}
-            style={type === "danger" ? { backgroundColor: '#ef4444', borderColor: '#dc2626' } : {}}
+            disabled={isLoading}
+            style={type === "danger" ? { backgroundColor: '#ef4444', borderColor: '#dc2626', opacity: isLoading ? 0.7 : 1 } : { opacity: isLoading ? 0.7 : 1 }}
           >
-            {confirmText}
+            {isLoading ? "Please wait..." : confirmText}
           </button>
         </div>
       </div>

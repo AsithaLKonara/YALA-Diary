@@ -11,6 +11,7 @@ export default function AdminUsersPage() {
   
   const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, userId: string, type: 'delete' | 'role', newRole?: string}>({isOpen: false, userId: "", type: "delete"});
   const [alertDialog, setAlertDialog] = useState<{isOpen: boolean, message: string, type: 'danger' | 'info' | 'warning'}>({isOpen: false, message: "", type: "danger"});
+  const [isActionLoading, setIsActionLoading] = useState(false);
   
   // Create user form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -77,6 +78,7 @@ export default function AdminUsersPage() {
   };
 
   const confirmDeleteUser = async () => {
+    setIsActionLoading(true);
     try {
       const res = await fetch(`/api/admin/users/${confirmDialog.userId}`, {
         method: "DELETE"
@@ -91,6 +93,7 @@ export default function AdminUsersPage() {
       console.error(err);
       setAlertDialog({ isOpen: true, message: "An error occurred", type: "danger" });
     } finally {
+      setIsActionLoading(false);
       setConfirmDialog(prev => ({ ...prev, isOpen: false }));
     }
   };
@@ -100,6 +103,7 @@ export default function AdminUsersPage() {
   };
 
   const confirmRoleChange = async () => {
+    setIsActionLoading(true);
     try {
       const res = await fetch(`/api/admin/users/${confirmDialog.userId}`, {
         method: "PATCH",
@@ -116,6 +120,7 @@ export default function AdminUsersPage() {
       console.error(err);
       setAlertDialog({ isOpen: true, message: "An error occurred", type: "danger" });
     } finally {
+      setIsActionLoading(false);
       setConfirmDialog(prev => ({ ...prev, isOpen: false }));
     }
   };
@@ -249,6 +254,7 @@ export default function AdminUsersPage() {
         onConfirm={confirmDialog.type === 'delete' ? confirmDeleteUser : confirmRoleChange}
         onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
         confirmText="Confirm"
+        isLoading={isActionLoading}
         type={confirmDialog.type === 'delete' ? 'danger' : 'warning'}
       />
 
