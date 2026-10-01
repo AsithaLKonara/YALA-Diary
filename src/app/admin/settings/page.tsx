@@ -291,10 +291,10 @@ export default function SettingsPage() {
                         )}
                       </td>
                       <td className="muted">{CATEGORY_LABELS[addon.category] || addon.category}</td>
-                      <td style={{ fontWeight: 600 }}>${addon.price.toFixed(2)}</td>
+                      <td style={{ fontWeight: 600 }}>${addon.basePrice?.toFixed(2) || "0.00"}</td>
                       <td>
-                        <span className={`status-badge ${addon.active ? "confirmed" : "checked_out"}`}>
-                          {addon.active ? "Active" : "Inactive"}
+                        <span className={`status-badge ${addon.isActive ? "confirmed" : "checked_out"}`}>
+                          {addon.isActive ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td>

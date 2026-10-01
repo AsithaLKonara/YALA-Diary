@@ -6,8 +6,9 @@ import { SiteMinderClient } from "@/modules/connectivity/providers/siteminder/cl
 import { sendBookingConfirmationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
-  const body = await req.text();
-  const signature = (await headers()).get("Stripe-Signature") as string;
+  const rawBody = await req.arrayBuffer();
+  const body = Buffer.from(rawBody);
+  const signature = (await headers()).get("stripe-signature") as string;
 
   let event;
 
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     );
   } catch (err: any) {
     console.error("Webhook signature verification failed:", err.message);
-    return NextResponse.json({ error: "Webhook Error" }, { status: 400 });
+    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
   if (event.type === "checkout.session.completed") {
@@ -137,6 +138,30 @@ export async function POST(req: Request) {
     // Send the Confirmation Email
     if (booking.status === "CONFIRMED") {
       await sendBookingConfirmationEmail(booking);
+    }
+  } else if (event.type === "checkout.session.async_payment_failed" || event.type === "payment_intent.payment_failed") {
+    // Payment failed
+    const sessionOrIntent = event.data.object as any;
+    let bookingId;
+    
+    if (event.type === "checkout.session.async_payment_failed") {
+      bookingId = sessionOrIntent.client_reference_id || sessionOrIntent.metadata?.bookingId;
+    } else {
+      // payment_intent.payment_failed - try to find checkout session
+      const sessions = await stripe.checkout.sessions.list({ payment_intent: sessionOrIntent.id, limit: 1 });
+      if (sessions.data.length > 0) {
+        bookingId = sessions.data[0].client_reference_id || sessions.data[0].metadata?.bookingId;
+      }
+    }
+
+    if (bookingId) {
+      await prisma.booking.update({
+        where: { id: bookingId },
+        data: { status: "FAILED", paymentStatus: "FAILED" }
+      });
+      await prisma.bookingEvent.create({
+        data: { bookingId, status: "FAILED", action: "PAYMENT_FAILED" }
+      });
     }
   }
 

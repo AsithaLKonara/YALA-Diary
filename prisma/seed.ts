@@ -143,6 +143,55 @@ async function main() {
     console.log(`  ✓ ${addon.name} — $${addon.price}`);
   }
 
+  // ─── Safari Packages ───────────────────────────────────────────────────────
+  console.log("\n🚙 Seeding Safari Packages…");
+  const SAFARI_PACKAGES = [
+    { name: "Morning Safari", type: "MORNING" as const, startTime: "05:30", endTime: "10:30", basePrice: 45, pricingType: "PER_PERSON" as const, minGuests: 1, maxCapacity: 6, inclusions: ["Jeep", "Tracker"], active: true },
+    { name: "Afternoon Safari", type: "AFTERNOON" as const, startTime: "14:30", endTime: "18:30", basePrice: 45, pricingType: "PER_PERSON" as const, minGuests: 1, maxCapacity: 6, inclusions: ["Jeep", "Tracker"], active: true },
+    { name: "Full Day Safari", type: "FULL_DAY" as const, startTime: "05:30", endTime: "18:30", basePrice: 90, pricingType: "PER_PERSON" as const, minGuests: 1, maxCapacity: 6, inclusions: ["Jeep", "Tracker", "Lunch"], active: true },
+  ];
+  for (const pkg of SAFARI_PACKAGES) {
+    const id = pkg.name.toLowerCase().replace(/\s+/g, "_");
+    await prisma.safariPackage.upsert({
+      where: { id },
+      update: { basePrice: pkg.basePrice, isActive: pkg.active },
+      create: {
+        id,
+        name: pkg.name,
+        type: pkg.type,
+        startTime: pkg.startTime,
+        endTime: pkg.endTime,
+        basePrice: pkg.basePrice,
+        pricingType: pkg.pricingType,
+        minGuests: pkg.minGuests,
+        maxCapacity: pkg.maxCapacity,
+        inclusions: pkg.inclusions,
+        isActive: pkg.active,
+      }
+    });
+    console.log(`  ✓ ${pkg.name} — $${pkg.basePrice}`);
+  }
+
+  // ─── Entrance Tickets ──────────────────────────────────────────────────────
+  console.log("\n🎫 Seeding Entrance Tickets…");
+  const TICKETS = [
+    { name: "Block 1 (Morning)", type: "MORNING" as const, adultPrice: 35, childPrice: 15, active: true },
+    { name: "Block 1 (Afternoon)", type: "AFTERNOON" as const, adultPrice: 35, childPrice: 15, active: true },
+    { name: "Block 1 (Full Day)", type: "FULL_DAY" as const, adultPrice: 50, childPrice: 25, active: true },
+  ];
+  for (const tkt of TICKETS) {
+    await prisma.entranceTicket.create({
+      data: {
+        name: tkt.name,
+        type: tkt.type,
+        adultPrice: tkt.adultPrice,
+        childPrice: tkt.childPrice,
+        isActive: tkt.active,
+      }
+    });
+    console.log(`  ✓ ${tkt.name} — Adult: $${tkt.adultPrice} / Child: $${tkt.childPrice}`);
+  }
+
   console.log("\n✅ Seed complete!\n");
   console.log("─────────────────────────────────────────────");
   console.log("  ADMIN  → admin@yaladiary.com / Admin@2026!");

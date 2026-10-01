@@ -63,8 +63,9 @@ export async function POST(req: Request) {
         calculatedSafariPrice = pkg.pricingType === "PER_PERSON" ? pkg.basePrice * (adults + children) : pkg.basePrice;
       }
       const ticketRevenue = (entranceTicketType === 'COMPANY_PROVIDED' && entranceTicketPrice) ? entranceTicketPrice : 0;
-      const totalRev = calculatedSafariPrice + addOnRevenue + ticketRevenue;
-      const finalAddOnRevenue = addOnRevenue + ticketRevenue;
+      const governmentTax = (ticketRevenue * 0.18) + 10;
+      const totalRev = calculatedSafariPrice + addOnRevenue + ticketRevenue + governmentTax;
+      const finalAddOnRevenue = addOnRevenue + ticketRevenue + governmentTax;
       productName = `Safari Package - ${pkg.name}`;
 
       booking = await prisma.booking.create({

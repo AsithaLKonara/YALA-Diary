@@ -62,8 +62,8 @@ export default function BookingWizard() {
   const [bookingData, setBookingData] = useState<BookingData>({
     checkIn: new Date(Date.now() + 86400000).toISOString().split("T")[0],
     checkOut: new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
-    adults: 1,
-    children: 0,
+    adults: "" as unknown as number,
+    children: "" as unknown as number,
     safariPackage: null,
     addons: [],
     guest: { name: "", email: "", phone: "", country: "", requests: "" }
@@ -182,28 +182,40 @@ function Step1({ data, updateData, next }: any) {
           <div className="form-group">
             <label className="form-label">Adults</label>
             <input 
-              type="number" 
-              min="1" 
+              type="text" 
+              inputMode="numeric"
+              pattern="[0-9]*"
               className="form-input" 
-              value={data.adults} 
-              onChange={(e) => updateData({ adults: parseInt(e.target.value) || 1 })}
+              value={data.adults === "" ? "" : data.adults} 
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, "");
+                updateData({ adults: raw === "" ? "" : parseInt(raw) });
+              }}
             />
           </div>
           <div className="form-group">
             <label className="form-label">Children (0-11 years)</label>
             <input 
-              type="number" 
-              min="0" 
+              type="text" 
+              inputMode="numeric"
+              pattern="[0-9]*"
               className="form-input" 
-              value={data.children} 
-              onChange={(e) => updateData({ children: parseInt(e.target.value) || 0 })}
+              value={data.children === "" ? "" : data.children} 
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^0-9]/g, "");
+                updateData({ children: raw === "" ? "" : parseInt(raw) });
+              }}
             />
           </div>
         </div>
       </div>
 
       <div className="booking-actions" style={{ justifyContent: 'flex-end' }}>
-        <button className="btn-primary" onClick={next} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button 
+          className="btn-primary" 
+          onClick={next} 
+          disabled={data.adults === "" || data.children === ""}
+          style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           Next: Choose Safari →
         </button>
       </div>
@@ -913,8 +925,9 @@ function Step5({ data, updateData, back, next }: any) {
   });
 
   const addonsTotal = addonBreakdowns.reduce((sum: number, b: any) => sum + (b.valid ? b.totalPrice : 0), 0);
-  const ticketTotal = data.entranceTicketPrice || 0;
-  const total = (safariPriceInfo.valid ? safariPriceInfo.totalPrice : 0) + addonsTotal + ticketTotal;
+  const ticketTotal = data.entranceTicketType === "COMPANY_PROVIDED" ? (data.entranceTicketPrice || 0) : 0;
+  const governmentTax = (ticketTotal * 0.18) + 10;
+  const total = (safariPriceInfo.valid ? safariPriceInfo.totalPrice : 0) + addonsTotal + ticketTotal + governmentTax;
 
   const handleSubmit = async () => {
     if (!data.guest.name || !data.guest.email) { setError("Please fill in your name and email."); return; }
@@ -1062,6 +1075,14 @@ function Step5({ data, updateData, back, next }: any) {
             ))}
           </div>
         ))}
+
+        {/* Government Tax */}
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#ddd', fontWeight: 500, marginBottom: 4 }}>
+            <span>Government Tax</span>
+            <span>{formatPrice(governmentTax)}</span>
+          </div>
+        </div>
 
         <div className="summary-total">
           <span>Total</span>
