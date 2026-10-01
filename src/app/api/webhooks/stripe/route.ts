@@ -157,10 +157,10 @@ export async function POST(req: Request) {
     if (bookingId) {
       await prisma.booking.update({
         where: { id: bookingId },
-        data: { status: "FAILED", paymentStatus: "FAILED" }
+        data: { status: "CANCELLED", paymentStatus: "UNPAID" }
       });
       await prisma.bookingEvent.create({
-        data: { bookingId, status: "FAILED", action: "PAYMENT_FAILED" }
+        data: { bookingId, status: "CANCELLED", action: "PAYMENT_FAILED" }
       });
     }
   }

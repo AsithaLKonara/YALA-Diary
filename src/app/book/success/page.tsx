@@ -12,9 +12,10 @@ export default async function BookingSuccessPage({
   let errorMsg = null;
   let sessionId = null;
 
+  const resolvedSearchParams = await searchParams;
+  sessionId = resolvedSearchParams.session_id;
+
   try {
-    const resolvedSearchParams = await searchParams;
-    sessionId = resolvedSearchParams.session_id;
 
     if (sessionId) {
       if (sessionId.startsWith('mock_session_')) {

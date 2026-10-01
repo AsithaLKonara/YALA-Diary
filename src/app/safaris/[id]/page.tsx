@@ -5,14 +5,27 @@ import Link from "next/link";
 import { CheckCircle, Clock, CalendarDays, MapPin } from "lucide-react";
 import { SafariPackageService } from "@/modules/packages/services/SafariPackageService";
 import Footer from "@/components/Footer";
+import JsonLd from "@/components/seo/JsonLd";
+import { siteConfig } from "@/lib/seo/config";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const pkg = await SafariPackageService.getPackageById(id);
   if (!pkg) return { title: "Package Not Found | Yala Diary" };
+  
+  const pkgUrl = `${siteConfig.url}/safaris/${pkg.id}`;
+  const pkgImage = pkg.images?.[0] || siteConfig.ogImage;
+
   return {
-    title: `${pkg.name} | Yala Diary`,
+    title: pkg.name,
     description: `Experience the ${pkg.name} safari at Yala National Park.`,
+    alternates: { canonical: pkgUrl },
+    openGraph: {
+      title: pkg.name,
+      description: `Experience the ${pkg.name} safari at Yala National Park.`,
+      url: pkgUrl,
+      images: [{ url: pkgImage }],
+    }
   };
 }
 
@@ -26,8 +39,28 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
 
   const heroImage = pkg.images?.[0] || "/images/assets/leapords/519f7d6a-069a-4628-8711-2dd4b07647bc.jpg";
 
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": pkg.name,
+    "image": heroImage,
+    "description": `Experience the wild with our premium ${pkg.type.toLowerCase().replace('_', ' ')} safari in Yala National Park.`,
+    "brand": {
+      "@type": "Brand",
+      "name": siteConfig.name
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `${siteConfig.url}/safaris/${pkg.id}`,
+      "priceCurrency": "USD",
+      "price": pkg.basePrice,
+      "availability": "https://schema.org/InStock"
+    }
+  };
+
   return (
     <main style={{ minHeight: "100vh", backgroundColor: "var(--background)", color: "var(--foreground)" }}>
+      <JsonLd data={productJsonLd} />
       {/* Hero Section */}
       <section style={{ position: "relative", width: "100%", height: "65vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ position: "absolute", inset: 0, zIndex: 0 }}>

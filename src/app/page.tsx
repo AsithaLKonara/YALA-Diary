@@ -2,7 +2,12 @@ import dynamic from "next/dynamic";
 import Hero from "@/components/Hero";
 import { SafariPackageService } from "@/modules/packages/services/SafariPackageService";
 import "./sections.css";
+import { siteConfig } from "@/lib/seo/config";
+import type { Metadata } from "next";
 
+export const metadata: Metadata = {
+  alternates: { canonical: siteConfig.url },
+};
 const TrustBar = dynamic(() => import("@/components/sections/TrustBar"));
 const WhyYala = dynamic(() => import("@/components/sections/WhyYala"));
 const SafariExperiences = dynamic(() => import("@/components/sections/SafariExperiences"));
