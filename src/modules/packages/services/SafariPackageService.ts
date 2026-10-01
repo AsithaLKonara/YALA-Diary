@@ -101,6 +101,13 @@ export class SafariPackageService {
    * Deletes a safari package.
    */
   static async deletePackage(id: string): Promise<void> {
+    const bookingCount = await prisma.safariBooking.count({
+      where: { packageId: id }
+    });
+    if (bookingCount > 0) {
+      throw new Error("Cannot delete this package because it has existing bookings. Please edit it and set it to Inactive instead.");
+    }
+    
     await prisma.safariPackage.delete({
       where: { id },
     });

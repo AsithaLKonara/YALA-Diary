@@ -58,12 +58,15 @@ export default function PackagesPage() {
         : `/api/admin/tickets/${confirmDialog.id}`;
         
       const res = await fetch(url, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error || "Failed to delete item");
+      }
       
       await fetchData();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setAlertDialog({ isOpen: true, message: "Failed to delete item", type: "danger" });
+      setAlertDialog({ isOpen: true, message: err.message || "Failed to delete item", type: "danger" });
     } finally {
       setIsDeleting(false);
       setConfirmDialog({ isOpen: false, type: 'package', id: "", name: "" });
