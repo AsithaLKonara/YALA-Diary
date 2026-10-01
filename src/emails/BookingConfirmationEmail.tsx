@@ -14,10 +14,21 @@ import {
 interface BookingConfirmationEmailProps {
   booking: {
     ref: string;
+    bookingAttemptId?: string;
+    createdAt?: Date;
     guestName: string;
+    guestEmail: string;
+    guestPhone?: string;
+    guestCountry?: string;
     checkIn: Date;
     checkOut: Date;
+    nights: number;
+    roomRevenue: number;
+    addOnRevenue: number;
     totalRevenue: number;
+    amountPaid: number;
+    paymentStatus: string;
+    currency: string;
     adults: number;
     children: number;
     safariBookings?: any[];
@@ -28,8 +39,9 @@ interface BookingConfirmationEmailProps {
 export const BookingConfirmationEmail = ({
   booking,
 }: BookingConfirmationEmailProps) => {
-  const checkInDate = new Date(booking.checkIn).toLocaleDateString();
-  const checkOutDate = new Date(booking.checkOut).toLocaleDateString();
+  const checkInDate = new Date(booking.checkIn).toLocaleString();
+  const checkOutDate = new Date(booking.checkOut).toLocaleString();
+  const bookingDate = booking.createdAt ? new Date(booking.createdAt).toLocaleString() : 'N/A';
   const totalGuests = booking.adults + booking.children;
 
   return (
@@ -46,10 +58,20 @@ export const BookingConfirmationEmail = ({
           </Text>
 
           <Section style={detailsContainer}>
-            <Text style={detailsHeading}>Booking Reference: {booking.ref}</Text>
+            <Text style={detailsHeading}>Booking Overview</Text>
             <Hr style={hr} />
-            <Text style={detailsText}><strong>Check-in / Safari Date:</strong> {checkInDate}</Text>
+            <Text style={detailsText}><strong>Booking Reference:</strong> {booking.ref}</Text>
+            <Text style={detailsText}><strong>Payment Reference ID:</strong> {booking.bookingAttemptId || 'N/A'}</Text>
+            <Text style={detailsText}><strong>Booking Date/Time:</strong> {bookingDate}</Text>
+            <Text style={detailsText}><strong>Check-in:</strong> {checkInDate}</Text>
             <Text style={detailsText}><strong>Check-out:</strong> {checkOutDate}</Text>
+            <Text style={detailsText}><strong>Duration:</strong> {booking.nights || 1} Nights</Text>
+            
+            <Text style={sectionHeading}>Guest Details</Text>
+            <Text style={detailsText}><strong>Name:</strong> {booking.guestName}</Text>
+            <Text style={detailsText}><strong>Email:</strong> {booking.guestEmail}</Text>
+            <Text style={detailsText}><strong>Phone:</strong> {booking.guestPhone || 'N/A'}</Text>
+            <Text style={detailsText}><strong>Country:</strong> {booking.guestCountry || 'N/A'}</Text>
             <Text style={detailsText}><strong>Guests:</strong> {totalGuests} ({booking.adults} Adults, {booking.children} Children)</Text>
             
             {booking.safariBookings && booking.safariBookings.length > 0 && (
@@ -57,7 +79,7 @@ export const BookingConfirmationEmail = ({
                 <Text style={sectionHeading}>Safari Itinerary</Text>
                 {booking.safariBookings.map((sb: any) => (
                   <Text key={sb.id} style={detailsText}>
-                    • {sb.package?.name || 'Safari Package'} on {new Date(sb.date).toLocaleDateString()}
+                    • {sb.package?.name || 'Safari Package'} on {new Date(sb.date).toLocaleString()}
                   </Text>
                 ))}
               </>
@@ -75,7 +97,11 @@ export const BookingConfirmationEmail = ({
             )}
 
             <Hr style={hr} />
-            <Text style={totalText}>Total Paid: ${booking.totalRevenue.toFixed(2)}</Text>
+            <Text style={sectionHeading}>Payment Summary</Text>
+            <Text style={detailsText}><strong>Base Revenue (Room/Safari):</strong> {booking.currency || 'USD'} {Number(booking.roomRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+            <Text style={detailsText}><strong>Add-ons & Extras:</strong> {booking.currency || 'USD'} {Number(booking.addOnRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
+            <Text style={detailsText}><strong>Payment Status:</strong> {booking.paymentStatus}</Text>
+            <Text style={totalText}>Total Paid: {booking.currency || 'USD'} {Number(booking.amountPaid || booking.totalRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Text>
           </Section>
 
           <Text style={footer}>
