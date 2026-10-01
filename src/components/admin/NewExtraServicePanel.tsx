@@ -18,6 +18,8 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
     name: editData?.name || "",
     description: editData?.description || "",
     category: editData?.category || "Food & Beverage",
+    minGuests: editData?.pricingOptions?.minGuests || "",
+    maxCapacity: editData?.pricingOptions?.maxCapacity || "",
   });
 
   const [pricingOptions, setPricingOptions] = useState<ServicePricingOptions>(() => {
@@ -96,10 +98,18 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
       }
 
       const legacy = computeLegacy(pricingOptions);
+      const updatedPricingOptions = {
+        ...pricingOptions,
+        minGuests: formData.minGuests ? parseInt(formData.minGuests.toString(), 10) : null,
+        maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity.toString(), 10) : null,
+      };
+
       const payload = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
         ...legacy,
-        pricingOptions,
+        pricingOptions: updatedPricingOptions,
         images: uploadedUrls,
       };
 
@@ -168,6 +178,21 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
                   <option value="ADD_NEW">+ Add New Category...</option>
                 </select>
               )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <label className="admin-label">Min Guests (Optional)</label>
+                <input type="number" min={1} className="admin-input"
+                  value={formData.minGuests} onChange={e => setFormData({...formData, minGuests: e.target.value})}
+                  placeholder="e.g. 1" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label className="admin-label">Max Capacity (Optional)</label>
+                <input type="number" min={1} className="admin-input"
+                  value={formData.maxCapacity} onChange={e => setFormData({...formData, maxCapacity: e.target.value})}
+                  placeholder="e.g. 3 for a car" />
+              </div>
             </div>
 
             {/* ── PRICING OPTIONS BUILDER ── */}

@@ -13,7 +13,7 @@ export default function ExtraServiceModal({
   onSelect: () => void;
 }) {
   const { formatPrice } = useCurrency();
-  const image = service.image || "/images/assets/leapords/519f7d6a-069a-4628-8711-2dd4b07647bc.jpg";
+  const image = service.images?.[0] || "/images/assets/leapords/519f7d6a-069a-4628-8711-2dd4b07647bc.jpg";
   const features = service.features || [];
 
   return (

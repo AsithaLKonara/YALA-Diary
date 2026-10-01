@@ -194,7 +194,7 @@ function Step1({ data, updateData, next }: any) {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Children (0-11 years)</label>
+            <label className="form-label">Children (0-13 years)</label>
             <input 
               type="text" 
               inputMode="numeric"
@@ -214,7 +214,7 @@ function Step1({ data, updateData, next }: any) {
         <button 
           className="btn-primary" 
           onClick={next} 
-          disabled={data.adults === "" || data.children === ""}
+          disabled={data.adults === "" || !data.adults}
           style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           Next: Choose Safari →
         </button>
@@ -541,7 +541,13 @@ function Step3({ data, updateData, next, back }: any) {
           display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
           gap: '20px', marginTop: 20
         }}>
-          {availableAddons.map((a: any) => {
+          {availableAddons.filter((a: any) => {
+            const totalGuests = (data.adults || 0) + (data.children || 0);
+            const opts = a.pricingOptions || {};
+            if (opts.minGuests && totalGuests < opts.minGuests) return false;
+            if (opts.maxCapacity && totalGuests > opts.maxCapacity) return false;
+            return true;
+          }).map((a: any) => {
             const isSelected = !!data.addons.find((ad: any) => ad.id === a.id);
             const image = a.images?.[0] || null;
             
