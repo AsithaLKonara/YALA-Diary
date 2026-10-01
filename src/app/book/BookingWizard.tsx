@@ -802,7 +802,7 @@ function Step4({ data, updateData, back, next }: any) {
             </div>
             {data.entranceTicketType === "SELF_ARRANGED" && (
               <div style={{ marginTop: 15, fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', padding: 12, background: 'rgba(0,0,0,0.3)', borderRadius: 6 }}>
-                Please ensure you book your tickets for the correct date and time at <a href="https://www.yalasrilanka.lk/yala-safari-ride" target="_blank" style={{ color: 'var(--primary)' }}>yalasrilanka.lk</a>
+                Please ensure you book your tickets for the correct date and time at <a href="https://share.google/3hZua4Q3xppfHezYL" target="_blank" style={{ color: 'var(--primary)' }}>the official ticketing portal</a>
               </div>
             )}
           </div>
