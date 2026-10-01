@@ -7,12 +7,15 @@ import { stripe } from "@/lib/stripe";
 export async function POST(req: Request) {
   try {
     const data = await req.json();
-    const { 
+    let { 
       isSafariOnly, safariPackageId, 
       hotelId, checkIn, checkOut, adults, children, roomTypeId, ratePlanId, 
       addons, guest, userId, price, pricingSnapshot,
       entranceTicketType, entranceTicketBlock, entranceTicketDuration, entranceTicketPrice
     } = data;
+
+    adults = parseInt(adults as any) || 1;
+    children = parseInt(children as any) || 0;
 
     if (!checkIn || !checkOut || !guest || !guest.name || !guest.email) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });

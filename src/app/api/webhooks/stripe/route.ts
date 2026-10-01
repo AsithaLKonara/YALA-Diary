@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import { SiteMinderClient } from "@/modules/connectivity/providers/siteminder/client";
-import { sendBookingConfirmationEmail } from "@/lib/email";
+import { sendBookingConfirmationEmail, sendAdminNotificationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   const rawBody = await req.arrayBuffer();
@@ -135,9 +135,12 @@ export async function POST(req: Request) {
       }
     }
 
-    // Send the Confirmation Email
+    // Send the Confirmation Emails (Non-blocking)
     if (booking.status === "CONFIRMED") {
-      await sendBookingConfirmationEmail(booking);
+      Promise.all([
+        sendBookingConfirmationEmail(booking),
+        sendAdminNotificationEmail(booking)
+      ]).catch(err => console.error("Background email task failed:", err));
     }
   } else if (event.type === "checkout.session.async_payment_failed" || event.type === "payment_intent.payment_failed") {
     // Payment failed

@@ -178,34 +178,22 @@ function Step1({ data, updateData, next }: any) {
           <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Guest Requirements</h3>
           <Users size={20} color="var(--primary)" />
         </div>
-        <div className="form-grid">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div className="form-group">
             <label className="form-label">Adults</label>
-            <input 
-              type="text" 
-              inputMode="numeric"
-              pattern="[0-9]*"
-              className="form-input" 
-              value={data.adults === "" ? "" : data.adults} 
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, "");
-                updateData({ adults: raw === "" ? "" : parseInt(raw) });
-              }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', height: '54px', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px', overflow: 'hidden' }}>
+              <button type="button" onClick={() => updateData({ adults: Math.max(1, (parseInt(data.adults as any) || 1) - 1) })} style={{ width: '45px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderRight: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', flexShrink: 0 }}>-</button>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" value={data.adults === "" ? "" : data.adults} onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); updateData({ adults: raw === "" ? "" : parseInt(raw) }); }} style={{ flex: 1, height: '100%', minWidth: 0, background: 'transparent', border: 'none', textAlign: 'center', color: '#fff', fontSize: '1rem', outline: 'none' }} />
+              <button type="button" onClick={() => updateData({ adults: (parseInt(data.adults as any) || 1) + 1 })} style={{ width: '45px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', flexShrink: 0 }}>+</button>
+            </div>
           </div>
           <div className="form-group">
             <label className="form-label">Children (0-13 years)</label>
-            <input 
-              type="text" 
-              inputMode="numeric"
-              pattern="[0-9]*"
-              className="form-input" 
-              value={data.children === "" ? "" : data.children} 
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^0-9]/g, "");
-                updateData({ children: raw === "" ? "" : parseInt(raw) });
-              }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', height: '54px', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '8px', overflow: 'hidden' }}>
+              <button type="button" onClick={() => updateData({ children: Math.max(0, (parseInt(data.children as any) || 0) - 1) })} style={{ width: '45px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderRight: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', flexShrink: 0 }}>-</button>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" value={data.children === "" ? "" : data.children} onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); updateData({ children: raw === "" ? "" : parseInt(raw) }); }} style={{ flex: 1, height: '100%', minWidth: 0, background: 'transparent', border: 'none', textAlign: 'center', color: '#fff', fontSize: '1rem', outline: 'none' }} />
+              <button type="button" onClick={() => updateData({ children: (parseInt(data.children as any) || 0) + 1 })} style={{ width: '45px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '1.2rem', cursor: 'pointer', flexShrink: 0 }}>+</button>
+            </div>
           </div>
         </div>
       </div>
@@ -284,21 +272,30 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
         </div>
 
         <h4 style={{ fontSize: '1rem', marginTop: '20px', marginBottom: '10px', color: 'rgba(255,255,255,0.8)' }}>Guests</h4>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div className="form-group">
             <label className="form-label" style={{ fontSize: '0.8rem' }}>Adults</label>
-            <input type="number" min="1" className="form-input" value={data.adults}
-              onChange={(e) => updateData({ adults: parseInt(e.target.value) || 1 })} style={{ fontSize: '0.9rem' }} />
+            <div style={{ display: 'flex', alignItems: 'center', height: '42px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', overflow: 'hidden' }}>
+              <button type="button" onClick={() => updateData({ adults: Math.max(1, (parseInt(data.adults as any) || 1) - 1) })} style={{ width: '36px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderRight: '1px solid rgba(255,255,255,0.1)', color: 'var(--dash-text)', cursor: 'pointer', fontSize: '1.1rem', flexShrink: 0 }}>-</button>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" style={{ flex: 1, height: '100%', minWidth: 0, background: 'transparent', border: 'none', textAlign: 'center', color: 'var(--dash-text)', outline: 'none', fontSize: '0.9rem', width: '100%' }} value={data.adults === "" ? "" : data.adults} onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); updateData({ adults: raw === "" ? "" : parseInt(raw) }); }} />
+              <button type="button" onClick={() => updateData({ adults: (parseInt(data.adults as any) || 1) + 1 })} style={{ width: '36px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.1)', color: 'var(--dash-text)', cursor: 'pointer', fontSize: '1.1rem', flexShrink: 0 }}>+</button>
+            </div>
           </div>
           <div className="form-group">
-            <label className="form-label" style={{ fontSize: '0.8rem' }}>Children</label>
-            <input type="number" min="0" className="form-input" value={data.children}
-              onChange={(e) => updateData({ children: parseInt(e.target.value) || 0 })} style={{ fontSize: '0.9rem' }} />
+            <label className="form-label" style={{ fontSize: '0.8rem' }}>Children (0-13 yrs)</label>
+            <div style={{ display: 'flex', alignItems: 'center', height: '42px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', overflow: 'hidden' }}>
+              <button type="button" onClick={() => updateData({ children: Math.max(0, (parseInt(data.children as any) || 0) - 1) })} style={{ width: '36px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderRight: '1px solid rgba(255,255,255,0.1)', color: 'var(--dash-text)', cursor: 'pointer', fontSize: '1.1rem', flexShrink: 0 }}>-</button>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" style={{ flex: 1, height: '100%', minWidth: 0, background: 'transparent', border: 'none', textAlign: 'center', color: 'var(--dash-text)', outline: 'none', fontSize: '0.9rem', width: '100%' }} value={data.children === "" ? "" : data.children} onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); updateData({ children: raw === "" ? "" : parseInt(raw) }); }} />
+              <button type="button" onClick={() => updateData({ children: (parseInt(data.children as any) || 0) + 1 })} style={{ width: '36px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.1)', color: 'var(--dash-text)', cursor: 'pointer', fontSize: '1.1rem', flexShrink: 0 }}>+</button>
+            </div>
           </div>
           <div className="form-group" style={{ gridColumn: '1 / -1' }}>
             <label className="form-label" style={{ fontSize: '0.8rem' }}>Jeeps (Private)</label>
-            <input type="number" min={Math.max(1, Math.ceil((data.adults + data.children) / 6))} className="form-input" value={data.jeeps}
-              onChange={(e) => updateData({ jeeps: Math.max(1, parseInt(e.target.value) || 1) })} style={{ fontSize: '0.9rem' }} />
+            <div style={{ display: 'flex', alignItems: 'center', height: '42px', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', overflow: 'hidden', width: '100%' }}>
+              <button type="button" onClick={() => updateData({ jeeps: Math.max(Math.max(1, Math.ceil(((parseInt(data.adults as any) || 1) + (parseInt(data.children as any) || 0)) / 6)), data.jeeps - 1) })} style={{ width: '36px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderRight: '1px solid rgba(255,255,255,0.1)', color: 'var(--dash-text)', cursor: 'pointer', fontSize: '1.1rem', flexShrink: 0 }}>-</button>
+              <input type="text" inputMode="numeric" pattern="[0-9]*" style={{ flex: 1, height: '100%', minWidth: 0, background: 'transparent', border: 'none', textAlign: 'center', color: 'var(--dash-text)', outline: 'none', fontSize: '0.9rem', width: '100%' }} value={data.jeeps} onChange={(e) => { const raw = e.target.value.replace(/[^0-9]/g, ""); updateData({ jeeps: Math.max(1, parseInt(raw) || 1) }); }} />
+              <button type="button" onClick={() => updateData({ jeeps: data.jeeps + 1 })} style={{ width: '36px', height: '100%', background: 'rgba(255,255,255,0.05)', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.1)', color: 'var(--dash-text)', cursor: 'pointer', fontSize: '1.1rem', flexShrink: 0 }}>+</button>
+            </div>
           </div>
         </div>
 
@@ -537,17 +534,31 @@ function Step3({ data, updateData, next, back }: any) {
           <p style={{ color: 'rgba(255,255,255,0.5)' }}>No extra services available.</p>
         </div>
       ) : (
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-          gap: '20px', marginTop: 20
-        }}>
-          {availableAddons.filter((a: any) => {
-            const totalGuests = (data.adults || 0) + (data.children || 0);
-            const opts = a.pricingOptions || {};
-            if (opts.minGuests && totalGuests < opts.minGuests) return false;
-            if (opts.maxCapacity && totalGuests > opts.maxCapacity) return false;
-            return true;
-          }).map((a: any) => {
+        <div>
+          {(() => {
+            const validAddons = availableAddons.filter((a: any) => {
+              const totalGuests = (data.adults || 0) + (data.children || 0);
+              const opts = a.pricingOptions || {};
+              if (opts.minGuests && totalGuests < opts.minGuests) return false;
+              if (opts.maxCapacity && totalGuests > opts.maxCapacity) return false;
+              return true;
+            });
+            
+            const grouped = validAddons.reduce((acc: Record<string, any[]>, a: any) => {
+              const cat = a.category || "Other";
+              if (!acc[cat]) acc[cat] = [];
+              acc[cat].push(a);
+              return acc;
+            }, {});
+
+            return Object.entries(grouped).map(([category, addons]) => (
+              <div key={category} style={{ marginBottom: 32 }}>
+                <h3 style={{ fontSize: '1.2rem', marginBottom: 16, color: 'rgba(255,255,255,0.9)', textTransform: 'capitalize' }}>{category}</h3>
+                <div style={{
+                  display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                  gap: '20px'
+                }}>
+                  {addons.map((a: any) => {
             const isSelected = !!data.addons.find((ad: any) => ad.id === a.id);
             const image = a.images?.[0] || null;
             
@@ -693,7 +704,11 @@ function Step3({ data, updateData, next, back }: any) {
                 </div>
               </div>
             );
-          })}
+                  })}
+                </div>
+              </div>
+            ));
+          })()}
         </div>
       )}
 
@@ -861,13 +876,21 @@ function Step4({ data, updateData, back, next }: any) {
                           border: `1px solid ${data.entranceTicketId === tkt.id ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`,
                           borderRadius: 6,
                           background: data.entranceTicketId === tkt.id ? 'rgba(154,205,50,0.2)' : 'rgba(0,0,0,0.2)',
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer'
                         }}
                       >
-                        <div>
-                          <div style={{ fontWeight: 500 }}>{tkt.name}</div>
-                          <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-                            Adult: LKR {tkt.adultPrice} × {data.adults} | Child: LKR {tkt.childPrice} × {data.children}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                          <input 
+                            type="radio" 
+                            checked={data.entranceTicketId === tkt.id} 
+                            readOnly 
+                            style={{ accentColor: 'var(--primary)', width: 18, height: 18, cursor: 'pointer' }} 
+                          />
+                          <div>
+                            <div style={{ fontWeight: 500 }}>{tkt.name}</div>
+                            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
+                              Adult: LKR {tkt.adultPrice} × {data.adults} | Child: LKR {tkt.childPrice} × {data.children}
+                            </div>
                           </div>
                         </div>
                         <div style={{ fontWeight: 600, color: 'var(--primary)' }}>
@@ -1087,6 +1110,18 @@ function Step5({ data, updateData, back, next }: any) {
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#ddd', fontWeight: 500, marginBottom: 4 }}>
             <span>Government Tax</span>
             <span>{formatPrice(governmentTax)}</span>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', padding: '1px 0 1px 12px', display: 'flex', flexDirection: 'column' }}>
+            {data.entranceTicketType === "COMPANY_PROVIDED" && (
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Entrance Ticket Tax (18%)</span>
+                <span>{formatPrice(ticketTotal * 0.18)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Fixed Service Tax</span>
+              <span>$10.00</span>
+            </div>
           </div>
         </div>
 

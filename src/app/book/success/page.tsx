@@ -65,11 +65,7 @@ export default async function BookingSuccessPage({
           </>
         )}
 
-        {sessionId && (
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginBottom: 40 }}>
-            Session ID: {sessionId}
-          </p>
-        )}
+
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 20 }}>
           <Link href="/" className="btn-secondary">
