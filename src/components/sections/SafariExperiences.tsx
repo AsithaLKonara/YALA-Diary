@@ -8,9 +8,6 @@ export default function SafariExperiences({ packages }: { packages?: any[] }) {
   const { formatPrice } = useCurrency();
   const displayPackages = packages || [];
 
-  if (displayPackages.length === 0) {
-    return null;
-  }
   const isScrollable = displayPackages.length > 4;
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -31,8 +28,12 @@ export default function SafariExperiences({ packages }: { packages?: any[] }) {
     return () => clearInterval(interval);
   }, [isScrollable]);
 
+  if (displayPackages.length === 0) {
+    return null;
+  }
+
   return (
-    <section className="experiences-section ">
+    <section className="experiences-section section-padding">
       <div className="experiences-header" style={!isScrollable ? { textAlign: 'center' } : {}}>
         <h2 className="section-title">Safari Experiences</h2>
       </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import Image from "next/image";
 import BookingWizard from "./BookingWizard";
 import "./booking.css";
@@ -21,7 +21,9 @@ export default function BookPage() {
       </div>
       
       <div className="booking-container">
-        <BookingWizard />
+        <Suspense fallback={<div style={{ padding: 40, textAlign: "center" }}>Loading booking...</div>}>
+          <BookingWizard />
+        </Suspense>
       </div>
     </div>
   );

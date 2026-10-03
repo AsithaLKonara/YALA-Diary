@@ -6,6 +6,7 @@ import { Calendar, MapPin, Users, ChevronDown, Check, Loader2, Info, AlertTriang
 import { useCurrency } from "@/context/CurrencyContext";
 import { RATES } from "@/lib/currency";
 import { useSession } from "next-auth/react";
+import { useSearchParams } from "next/navigation";
 import { calculateSafariPrice, getDisplayMinPrice, getDisplayMinPriceLabel, calculateServicePrice } from "@/lib/pricing";
 import type { SafariPricingRules, ServicePricingOptions } from "@/lib/pricing";
 import CustomDatePicker from "@/components/ui/CustomDatePicker";
@@ -58,7 +59,11 @@ interface BookingData {
 
 export default function BookingWizard() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
+  const packageIdParam = searchParams.get("packageId");
+
   const [step, setStep] = useState(1);
+  const [hasPreselectedPackage, setHasPreselectedPackage] = useState(false);
   const [bookingData, setBookingData] = useState<BookingData>({
     checkIn: new Date(Date.now() + 86400000).toISOString().split("T")[0],
     checkOut: new Date(Date.now() + 86400000 * 2).toISOString().split("T")[0],
@@ -70,7 +75,6 @@ export default function BookingWizard() {
   });
 
   useEffect(() => {
-    // Check if packageId is in URL to pre-select, but we fetch it in Step 2 so we will handle that there
     if (session?.user) {
       setBookingData(prev => ({
         ...prev,
@@ -85,40 +89,76 @@ export default function BookingWizard() {
 
   const [availablePackages, setAvailablePackages] = useState<SafariPackage[]>([]);
 
+  useEffect(() => {
+    if (packageIdParam) {
+      setHasPreselectedPackage(true);
+      fetch("/api/booking/packages")
+        .then(res => res.json())
+        .then(json => {
+          if (json.packages) {
+            setAvailablePackages(json.packages);
+            const pkg = json.packages.find((p: any) => p.id === packageIdParam);
+            if (pkg) {
+              setBookingData(prev => ({ ...prev, safariPackage: pkg }));
+            } else {
+              setHasPreselectedPackage(false);
+            }
+          }
+        })
+        .catch(() => setHasPreselectedPackage(false));
+    }
+  }, [packageIdParam]);
+
   const updateData = (data: Partial<BookingData>) => {
     setBookingData(prev => ({ ...prev, ...data }));
   };
+
+  const stepsConfig = hasPreselectedPackage
+    ? [
+        { id: 1, label: "Reservations" },
+        { id: 3, label: "Enhance Safari" },
+        { id: 4, label: "Tickets" },
+        { id: 5, label: "Checkout" }
+      ]
+    : [
+        { id: 1, label: "Reservations" },
+        { id: 2, label: "Select Safari" },
+        { id: 3, label: "Enhance Safari" },
+        { id: 4, label: "Tickets" },
+        { id: 5, label: "Checkout" }
+      ];
 
   return (
     <div className="wizard-container">
       {/* Progress Bar */}
       {step < 6 && (
         <div className="booking-progress">
-          {[
-            { num: 1, label: "Reservations" },
-            { num: 2, label: "Select Safari" },
-            { num: 3, label: "Enhance Safari" },
-            { num: 4, label: "Tickets" },
-            { num: 5, label: "Checkout" }
-          ].map((s, idx) => (
-            <React.Fragment key={s.num}>
-              <div className={`step-indicator ${step === s.num ? "active" : ""} ${step > s.num ? "completed" : ""}`}>
-                <div className={`step-number ${step >= s.num ? "step-active-bg" : ""}`}>
-                  {step > s.num ? <Check size={16} /> : s.num}
+          {stepsConfig.map((s, idx) => {
+             const displayNum = idx + 1;
+             const currentStepIndex = stepsConfig.findIndex(x => x.id === step);
+             const isCompleted = currentStepIndex > idx;
+             const isActive = currentStepIndex === idx;
+
+             return (
+              <React.Fragment key={s.id}>
+                <div className={`step-indicator ${isActive ? "active" : ""} ${isCompleted ? "completed" : ""}`}>
+                  <div className={`step-number ${isActive || isCompleted ? "step-active-bg" : ""}`}>
+                    {isCompleted ? <Check size={16} /> : displayNum}
+                  </div>
+                  <span className="step-label">{s.label}</span>
                 </div>
-                <span className="step-label">{s.label}</span>
-              </div>
-              {idx < 4 && <div className="step-connector" />}
-            </React.Fragment>
-          ))}
+                {idx < stepsConfig.length - 1 && <div className="step-connector" />}
+              </React.Fragment>
+             );
+          })}
         </div>
       )}
 
       {/* Steps Content */}
       <div className="wizard-content">
-        {step === 1 && <Step1 data={bookingData} updateData={updateData} next={() => setStep(2)} />}
-        {step === 2 && <Step2 data={bookingData} updateData={updateData} next={() => setStep(3)} back={() => setStep(1)} availablePackages={availablePackages} setAvailablePackages={setAvailablePackages} />}
-        {step === 3 && <Step3 data={bookingData} updateData={updateData} next={() => setStep(4)} back={() => setStep(2)} />}
+        {step === 1 && <Step1 data={bookingData} updateData={updateData} next={() => setStep(hasPreselectedPackage ? 3 : 2)} hasPreselectedPackage={hasPreselectedPackage} />}
+        {step === 2 && !hasPreselectedPackage && <Step2 data={bookingData} updateData={updateData} next={() => setStep(3)} back={() => setStep(1)} availablePackages={availablePackages} setAvailablePackages={setAvailablePackages} />}
+        {step === 3 && <Step3 data={bookingData} updateData={updateData} next={() => setStep(4)} back={() => setStep(hasPreselectedPackage ? 1 : 2)} />}
         {step === 4 && <Step4 data={bookingData} updateData={updateData} next={() => setStep(5)} back={() => setStep(3)} />}
         {step === 5 && <Step5 data={bookingData} updateData={updateData} back={() => setStep(4)} next={() => setStep(6)} />}
         {step === 6 && <Step6 />}
@@ -130,7 +170,7 @@ export default function BookingWizard() {
 // -----------------------------------------------------------------------------
 // STEP 1: Search Availability
 // -----------------------------------------------------------------------------
-function Step1({ data, updateData, next }: any) {
+function Step1({ data, updateData, next, hasPreselectedPackage }: any) {
   return (
     <div className="booking-panel">
       <h2 className="booking-title">Reservations</h2>
@@ -204,7 +244,7 @@ function Step1({ data, updateData, next }: any) {
           onClick={next} 
           disabled={data.adults === "" || !data.adults}
           style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          Next: Choose Safari →
+          {hasPreselectedPackage ? "Next: Enhance Safari →" : "Next: Choose Safari →"}
         </button>
       </div>
     </div>
