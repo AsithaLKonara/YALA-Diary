@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { SafariPackage, SafariPackageType, PricingType } from "@/generated/prisma/client";
+import { unlink } from "fs/promises";
+import { join } from "path";
 
 export class SafariPackageService {
   /**
@@ -101,6 +103,9 @@ export class SafariPackageService {
    * Deletes a safari package.
    */
   static async deletePackage(id: string): Promise<void> {
+    const pkg = await prisma.safariPackage.findUnique({ where: { id } });
+    if (!pkg) return;
+
     const bookingCount = await prisma.safariBooking.count({
       where: { packageId: id }
     });
@@ -111,5 +116,18 @@ export class SafariPackageService {
     await prisma.safariPackage.delete({
       where: { id },
     });
+
+    if (pkg.images && pkg.images.length > 0) {
+      for (const imgUrl of pkg.images) {
+        if (imgUrl.startsWith("/uploads/")) {
+          const filepath = join(process.cwd(), "public", imgUrl);
+          try {
+            await unlink(filepath);
+          } catch (e) {
+            console.error(`Failed to delete image file: ${filepath}`, e);
+          }
+        }
+      }
+    }
   }
 }

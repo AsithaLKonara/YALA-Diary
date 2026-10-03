@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ExtraService, PricingModel } from "@/generated/prisma/client";
+import { unlink } from "fs/promises";
+import { join } from "path";
 
 export class ExtraServiceManager {
   /**
@@ -67,9 +69,25 @@ export class ExtraServiceManager {
    * Deletes an extra service.
    */
   static async deleteService(id: string): Promise<void> {
+    const service = await prisma.extraService.findUnique({ where: { id } });
+    if (!service) return;
+
     await prisma.extraService.delete({
       where: { id },
     });
+
+    if (service.images && service.images.length > 0) {
+      for (const imgUrl of service.images) {
+        if (imgUrl.startsWith("/uploads/")) {
+          const filepath = join(process.cwd(), "public", imgUrl);
+          try {
+            await unlink(filepath);
+          } catch (e) {
+            console.error(`Failed to delete image file: ${filepath}`, e);
+          }
+        }
+      }
+    }
   }
 
   /**
