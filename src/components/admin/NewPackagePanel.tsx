@@ -3,9 +3,9 @@ import { X, Loader2, Plus, Trash2 } from "lucide-react";
 import CustomConfirmDialog from "./CustomConfirmDialog";
 import type { SafariPricingRules, GroupTier } from "@/lib/pricing";
 import dynamic from "next/dynamic";
-import "react-quill/dist/quill.snow.css";
+import "react-quill-new/dist/quill.snow.css";
 
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 const DEFAULT_RULES: SafariPricingRules = {
   strategyType: "PER_PERSON_WITH_CHILD",
@@ -156,12 +156,28 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
             <div>
               <label className="admin-label">Description</label>
               <div style={{ backgroundColor: 'white', color: 'black', borderRadius: '4px' }}>
+                <style>{`
+                  .quill-custom .ql-container {
+                    min-height: 180px;
+                    resize: vertical;
+                    overflow-y: auto;
+                  }
+                `}</style>
                 <ReactQuill 
+                  className="quill-custom"
                   theme="snow" 
                   value={formData.description} 
                   onChange={(val) => setFormData({...formData, description: val})} 
                 />
               </div>
+            </div>
+
+            {/* Inclusions */}
+            <div>
+              <label className="admin-label">Inclusions (comma separated)</label>
+              <textarea className="admin-input" rows={3}
+                value={formData.inclusions} onChange={e => setFormData({...formData, inclusions: e.target.value})}
+                placeholder="Licensed tracker, Free hotel pickup, Herbal Tea..." />
             </div>
 
             <div>
@@ -355,13 +371,7 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
               )}
             </div>
 
-            {/* Inclusions */}
-            <div>
-              <label className="admin-label">Inclusions (comma separated)</label>
-              <textarea className="admin-input" rows={3}
-                value={formData.inclusions} onChange={e => setFormData({...formData, inclusions: e.target.value})}
-                placeholder="Licensed tracker, Free hotel pickup, Herbal Tea..." />
-            </div>
+
 
             {/* Images */}
             <div>
