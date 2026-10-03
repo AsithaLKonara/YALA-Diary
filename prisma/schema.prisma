@@ -249,6 +249,7 @@ model BookingEvent {
 model SafariPackage {
   id           String            @id @default(cuid())
   name         String
+  description  String?
   type         SafariPackageType
   startTime    String
   endTime      String

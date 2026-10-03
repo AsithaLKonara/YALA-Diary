@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 import { X, Loader2, Plus, Trash2 } from "lucide-react";
 import CustomConfirmDialog from "./CustomConfirmDialog";
 import type { SafariPricingRules, GroupTier } from "@/lib/pricing";
+import dynamic from "next/dynamic";
+import "react-quill/dist/quill.snow.css";
+
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const DEFAULT_RULES: SafariPricingRules = {
   strategyType: "PER_PERSON_WITH_CHILD",
@@ -23,6 +27,7 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
 
   const [formData, setFormData] = useState({
     name: editData?.name || "",
+    description: editData?.description || "",
     type: editData?.type || "MORNING",
     startTime: editData?.startTime || "06:00",
     endTime: editData?.endTime || "12:00",
@@ -146,6 +151,17 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
               <input required type="text" className="admin-input"
                 value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
                 placeholder="e.g. Premium Morning Safari" />
+            </div>
+
+            <div>
+              <label className="admin-label">Description</label>
+              <div style={{ backgroundColor: 'white', color: 'black', borderRadius: '4px' }}>
+                <ReactQuill 
+                  theme="snow" 
+                  value={formData.description} 
+                  onChange={(val) => setFormData({...formData, description: val})} 
+                />
+              </div>
             </div>
 
             <div>

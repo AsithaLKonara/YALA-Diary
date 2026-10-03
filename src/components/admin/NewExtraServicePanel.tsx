@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { X, Loader2, Plus, Trash2 } from "lucide-react";
 import CustomConfirmDialog from "./CustomConfirmDialog";
 import type { ServicePricingOptions, PricingDimension, ServicePricingTier } from "@/lib/pricing";
+import dynamic from "next/dynamic";
+import "react-quill/dist/quill.snow.css";
+
+const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 const PRESET_CATEGORIES = ["Food & Beverage", "Airport Transfer", "Destination Transfer", "Photography", "Ticketing"];
 
@@ -155,9 +159,13 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
 
             <div>
               <label className="admin-label">Description</label>
-              <textarea className="admin-input" rows={2}
-                value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}
-                placeholder="Brief description..." />
+              <div style={{ backgroundColor: 'white', color: 'black', borderRadius: '4px' }}>
+                <ReactQuill 
+                  theme="snow" 
+                  value={formData.description} 
+                  onChange={(val) => setFormData({...formData, description: val})} 
+                />
+              </div>
             </div>
 
             <div>

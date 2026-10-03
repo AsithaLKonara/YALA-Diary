@@ -41,6 +41,7 @@ export class SafariPackageService {
     ...data
   }: {
     name: string;
+    description?: string;
     type: SafariPackageType;
     startTime: string;
     endTime: string;
@@ -74,6 +75,7 @@ export class SafariPackageService {
       ...data
     }: Partial<{
       name: string;
+      description: string;
       type: SafariPackageType;
       startTime: string;
       endTime: string;
