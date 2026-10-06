@@ -1,26 +1,28 @@
-import dynamic from "next/dynamic";
+import nextDynamic from "next/dynamic";
 import Hero from "@/components/Hero";
 import { SafariPackageService } from "@/modules/packages/services/SafariPackageService";
 import "./sections.css";
 import { siteConfig } from "@/lib/seo/config";
 import type { Metadata } from "next";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   alternates: { canonical: siteConfig.url },
 };
-const TrustBar = dynamic(() => import("@/components/sections/TrustBar"));
-const WhyYala = dynamic(() => import("@/components/sections/WhyYala"));
-const SafariExperiences = dynamic(() => import("@/components/sections/SafariExperiences"));
-const Wildlife = dynamic(() => import("@/components/sections/Wildlife"));
-const JourneyTimeline = dynamic(() => import("@/components/sections/JourneyTimeline"));
-const WhyBookUs = dynamic(() => import("@/components/sections/WhyBookUs"));
-const Gallery = dynamic(() => import("@/components/sections/Gallery"));
-const Reviews = dynamic(() => import("@/components/sections/Reviews"));
-const ExploreYala = dynamic(() => import("@/components/sections/ExploreYala"));
-const FAQ = dynamic(() => import("@/components/sections/FAQ"));
-const FinalConversion = dynamic(() => import("@/components/sections/FinalConversion"));
-const Footer = dynamic(() => import("@/components/Footer"));
-const FloatingWhatsApp = dynamic(() => import("@/components/ui/FloatingWhatsApp"));
+const TrustBar = nextDynamic(() => import("@/components/sections/TrustBar"));
+const WhyYala = nextDynamic(() => import("@/components/sections/WhyYala"));
+const SafariExperiences = nextDynamic(() => import("@/components/sections/SafariExperiences"));
+const Wildlife = nextDynamic(() => import("@/components/sections/Wildlife"));
+const JourneyTimeline = nextDynamic(() => import("@/components/sections/JourneyTimeline"));
+const WhyBookUs = nextDynamic(() => import("@/components/sections/WhyBookUs"));
+const Gallery = nextDynamic(() => import("@/components/sections/Gallery"));
+const Reviews = nextDynamic(() => import("@/components/sections/Reviews"));
+const ExploreYala = nextDynamic(() => import("@/components/sections/ExploreYala"));
+const FAQ = nextDynamic(() => import("@/components/sections/FAQ"));
+const FinalConversion = nextDynamic(() => import("@/components/sections/FinalConversion"));
+const Footer = nextDynamic(() => import("@/components/Footer"));
+const FloatingWhatsApp = nextDynamic(() => import("@/components/ui/FloatingWhatsApp"));
 
 export default async function Home() {
   const activePackages = await SafariPackageService.listActivePackages();
