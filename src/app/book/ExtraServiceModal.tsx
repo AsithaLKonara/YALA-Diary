@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { X, CheckCircle, Plus } from 'lucide-react';
 import { useCurrency } from '@/context/CurrencyContext';
@@ -16,7 +17,12 @@ export default function ExtraServiceModal({
   const image = service.images?.[0] || "/images/assets/leapords/519f7d6a-069a-4628-8711-2dd4b07647bc.jpg";
   const features = service.features || [];
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 9999,
@@ -49,6 +55,7 @@ export default function ExtraServiceModal({
         <div style={{ padding: '30px', overflowY: 'auto', flex: 1 }}>
           {service.description ? (
             <div 
+              className="rich-text"
               style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}
               dangerouslySetInnerHTML={{ __html: service.description }} 
             />
@@ -79,6 +86,7 @@ export default function ExtraServiceModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
