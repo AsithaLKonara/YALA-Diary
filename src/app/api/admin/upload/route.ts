@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
 import { auth } from "@/lib/auth";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+
+const s3 = new S3Client({ forcePathStyle: true });
+const BUCKET = process.env.AWS_S3_BUCKET_NAME || "assets";
 
 export async function POST(request: Request) {
   try {
@@ -22,9 +24,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Maximum 5 images allowed" }, { status: 400 });
     }
 
-    const uploadDir = join(process.cwd(), "public/uploads/packages");
-    await mkdir(uploadDir, { recursive: true });
-
     const uploadedUrls: string[] = [];
 
     for (const file of files) {
@@ -33,10 +32,20 @@ export async function POST(request: Request) {
       
       const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
       const filename = `${uniqueSuffix}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "")}`;
-      const filepath = join(uploadDir, filename);
+      // Store in S3 using the same 'uploads/packages' prefix
+      const key = `uploads/packages/${filename}`;
 
-      await writeFile(filepath, buffer);
-      uploadedUrls.push(`/uploads/packages/${filename}`);
+      const command = new PutObjectCommand({
+        Bucket: BUCKET,
+        Key: key,
+        Body: buffer,
+        ContentType: file.type,
+      });
+
+      await s3.send(command);
+
+      // Return proxy URL to dynamically generate a presigned URL on every request
+      uploadedUrls.push(`/api/assets/${key}`);
     }
 
     return NextResponse.json({ urls: uploadedUrls }, { status: 201 });
