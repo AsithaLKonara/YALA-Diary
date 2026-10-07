@@ -8,7 +8,7 @@ export default function SafariExperiences({ packages }: { packages?: any[] }) {
   const { formatPrice } = useCurrency();
   const displayPackages = packages || [];
 
-  const isScrollable = displayPackages.length > 4;
+  const isScrollable = displayPackages.length > 5;
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -62,7 +62,8 @@ export default function SafariExperiences({ packages }: { packages?: any[] }) {
               style={{
                 backgroundImage: `url(${image})`,
                 flexShrink: 0,
-                width: isScrollable ? '300px' : '400px',
+                width: isScrollable ? '300px' : `calc(${100 / displayPackages.length}% - 2px)`,
+                minWidth: isScrollable ? '300px' : '240px',
                 maxWidth: '100%',
                 flexGrow: isScrollable ? 0 : 0
               }}
