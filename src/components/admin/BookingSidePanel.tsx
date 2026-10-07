@@ -246,8 +246,8 @@ export default function BookingSidePanel({ bookingId, onClose, onStatusChange }:
                             <div style={{ marginTop: 6, padding: "8px", background: "rgba(0,0,0,0.2)", borderRadius: 4, border: "1px solid rgba(255,255,255,0.05)" }}>
                               <div style={{ color: "#fff", marginBottom: 2 }}>{sb.entranceTicket.name}</div>
                               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span>LKR {sb.entranceTicket.adultPrice} (Adult) / LKR {sb.entranceTicket.childPrice} (Child)</span>
-                                <span style={{ color: "var(--primary)", fontWeight: 600 }}>Total: LKR {sb.entranceTicketPrice?.toFixed(2)}</span>
+                                <span>$ {sb.entranceTicket.adultPrice} (Adult) / $ {sb.entranceTicket.childPrice} (Child)</span>
+                                <span style={{ color: "var(--primary)", fontWeight: 600 }}>Total: $ {sb.entranceTicketPrice?.toFixed(2)}</span>
                               </div>
                             </div>
                           )}

@@ -136,9 +136,16 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
               <span style={{ width: "30px", height: "2px", background: "var(--primary)", display: "inline-block" }}></span>
               Experience Overview
             </h2>
-            <p style={{ color: "rgba(255,255,255,0.7)", lineHeight: 1.8, fontSize: "1.1rem" }}>
-              Embark on an unforgettable journey through Yala National Park. This {pkg.type.toLowerCase().replace('_', ' ')} adventure is carefully designed to maximize your chances of witnessing Sri Lanka's iconic wildlife, including leopards, elephants, and exotic birds in their natural habitat. Guided by our expert trackers, every moment is tailored to offer you a spectacular and safe wild encounter.
-            </p>
+            {pkg.description ? (
+              <div 
+                style={{ color: "rgba(255,255,255,0.7)", lineHeight: 1.8, fontSize: "1.1rem" }}
+                dangerouslySetInnerHTML={{ __html: pkg.description }} 
+              />
+            ) : (
+              <p style={{ color: "rgba(255,255,255,0.7)", lineHeight: 1.8, fontSize: "1.1rem" }}>
+                Embark on an unforgettable journey through Yala National Park. This {pkg.type.toLowerCase().replace('_', ' ')} adventure is carefully designed to maximize your chances of witnessing Sri Lanka's iconic wildlife, including leopards, elephants, and exotic birds in their natural habitat. Guided by our expert trackers, every moment is tailored to offer you a spectacular and safe wild encounter.
+              </p>
+            )}
           </div>
 
           {/* Inclusions */}
@@ -179,9 +186,13 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
                     </div>
                     <div style={{ padding: "20px" }}>
                       <h4 style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "8px" }}>{service.name}</h4>
-                      <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", marginBottom: "20px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                        {service.description || "Enhance your safari experience."}
-                      </p>
+                      {service.description ? (
+                        <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", marginBottom: "20px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }} dangerouslySetInnerHTML={{ __html: service.description }} />
+                      ) : (
+                        <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", marginBottom: "20px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                          Enhance your safari experience.
+                        </p>
+                      )}
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.9rem" }}>
                         <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 600 }}>${service.basePrice} <span style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", fontWeight: 400 }}>{service.pricingModel.replace('_', ' ')}</span></span>
                       </div>

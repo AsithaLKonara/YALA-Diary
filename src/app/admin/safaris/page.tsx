@@ -305,9 +305,10 @@ export default function PackagesPage() {
                   )}
 
                   {srv.description && (
-                    <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--dash-muted)' }}>
-                      {srv.description}
-                    </div>
+                    <div 
+                      style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--dash-muted)' }}
+                      dangerouslySetInnerHTML={{ __html: srv.description }}
+                    />
                   )}
                 </div>
               ))}
@@ -351,10 +352,10 @@ export default function PackagesPage() {
                   </div>
                   
                   <div style={{ fontSize: '1rem', color: 'var(--dash-text)', marginTop: '8px' }}>
-                    Adult: LKR {tkt.adultPrice?.toFixed(2)}
+                    Adult: $ {tkt.adultPrice?.toFixed(2)}
                   </div>
                   <div style={{ fontSize: '1rem', color: 'var(--dash-text)' }}>
-                    Child: LKR {tkt.childPrice?.toFixed(2)}
+                    Child: $ {tkt.childPrice?.toFixed(2)}
                   </div>
                 </div>
               ))}

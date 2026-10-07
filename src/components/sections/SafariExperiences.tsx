@@ -70,7 +70,11 @@ export default function SafariExperiences({ packages }: { packages?: any[] }) {
               <div className="experience-overlay">
                 <div className="experience-content">
                   <h3>{title}</h3>
-                  <p>{desc}</p>
+                  {exp.description ? (
+                    <div style={{ fontSize: '0.9rem', marginBottom: '15px', color: 'rgba(255,255,255,0.7)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: exp.description }} />
+                  ) : (
+                    <p>{desc}</p>
+                  )}
                   <div className="experience-meta">
                     <span>{duration}</span>
                     <span>From {formatPrice(exp.basePrice || exp.price)}</span>

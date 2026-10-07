@@ -670,10 +670,10 @@ function Step3({ data, updateData, next, back }: any) {
                   <div onClick={() => toggleAddon(a, isValid)} style={{ cursor: isValid ? 'pointer' : 'not-allowed', flex: 1 }}>
                     <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6, color: '#fff' }}>{a.name}</h4>
                     {a.description && (
-                      <p style={{
+                      <div style={{
                         fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, marginBottom: 14,
                         display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                      }}>{a.description}</p>
+                      }} dangerouslySetInnerHTML={{ __html: a.description }} />
                     )}
                   </div>
 
@@ -929,12 +929,12 @@ function Step4({ data, updateData, back, next }: any) {
                           <div>
                             <div style={{ fontWeight: 500 }}>{tkt.name}</div>
                             <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-                              Adult: LKR {tkt.adultPrice} × {data.adults} | Child: LKR {tkt.childPrice} × {data.children}
+                              Adult: $ {tkt.adultPrice} × {data.adults} | Child: $ {tkt.childPrice} × {data.children}
                             </div>
                           </div>
                         </div>
                         <div style={{ fontWeight: 600, color: 'var(--primary)' }}>
-                          LKR {((tkt.adultPrice * data.adults) + (tkt.childPrice * data.children)).toFixed(2)}
+                          $ {((tkt.adultPrice * data.adults) + (tkt.childPrice * data.children)).toFixed(2)}
                         </div>
                       </div>
                     ))}

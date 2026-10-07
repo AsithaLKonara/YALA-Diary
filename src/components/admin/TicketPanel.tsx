@@ -83,7 +83,7 @@ export default function TicketPanel({ onClose, onSuccess, editData }: { onClose:
 
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ flex: 1 }}>
-                <label className="admin-label">Adult Price (LKR)</label>
+                <label className="admin-label">Adult Price ($)</label>
                 <input 
                   type="number"
                   value={formData.adultPrice}
@@ -95,7 +95,7 @@ export default function TicketPanel({ onClose, onSuccess, editData }: { onClose:
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label className="admin-label">Child Price (LKR)</label>
+                <label className="admin-label">Child Price ($)</label>
                 <input 
                   type="number"
                   value={formData.childPrice}
