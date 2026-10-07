@@ -68,19 +68,30 @@ export default function PackageDetailsModal({
             </div>
           </div>
 
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}>
-            Experience the wild with our premium {pkg.type.toLowerCase().replace('_', ' ')} safari in Yala National Park. This package includes a private jeep, an expert guide, and a curated itinerary designed to maximize your wildlife sightings.
-          </p>
+          {pkg.description ? (
+            <div 
+              style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}
+              dangerouslySetInnerHTML={{ __html: pkg.description }} 
+            />
+          ) : (
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}>
+              Experience the wild with our premium {pkg.type.toLowerCase().replace('_', ' ')} safari in Yala National Park. This package includes a private jeep, an expert guide, and a curated itinerary designed to maximize your wildlife sightings.
+            </p>
+          )}
 
-          <h3 style={{ fontSize: '1.25rem', marginBottom: 16, color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 10 }}>What's Included</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "16px", marginBottom: 30 }}>
-            {inclusions.map((inc: string, idx: number) => (
-              <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
-                <CheckCircle size={18} color="var(--primary)" style={{ flexShrink: 0, marginTop: "2px" }} />
-                <span style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.95rem", lineHeight: 1.4 }}>{inc}</span>
+          {inclusions && inclusions.length > 0 && (
+            <>
+              <h3 style={{ fontSize: '1.25rem', marginBottom: 16, color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 10 }}>What's Included</h3>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "16px", marginBottom: 30 }}>
+                {inclusions.map((inc: string, idx: number) => (
+                  <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                    <CheckCircle size={18} color="var(--primary)" style={{ flexShrink: 0, marginTop: "2px" }} />
+                    <span style={{ color: "rgba(255,255,255,0.8)", fontSize: "0.95rem", lineHeight: 1.4 }}>{inc}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </div>
 
         {/* Footer */}

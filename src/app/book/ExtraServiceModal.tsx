@@ -47,9 +47,16 @@ export default function ExtraServiceModal({
         </div>
 
         <div style={{ padding: '30px', overflowY: 'auto', flex: 1 }}>
-          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}>
-            {service.description || "Enhance your safari experience with this premium add-on."}
-          </p>
+          {service.description ? (
+            <div 
+              style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}
+              dangerouslySetInnerHTML={{ __html: service.description }} 
+            />
+          ) : (
+            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}>
+              Enhance your safari experience with this premium add-on.
+            </p>
+          )}
 
           {features && features.length > 0 && (
             <>
