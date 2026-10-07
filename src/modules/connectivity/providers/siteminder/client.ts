@@ -16,8 +16,14 @@ export class SiteMinderClient implements HotelChannelProvider {
   private timeoutMs: number;
 
   constructor() {
-    this.baseUrl = process.env.SITEMINDER_API_URL || "https://api.siteminder.com/sandbox/v1";
-    this.apiKey = process.env.SITEMINDER_API_KEY || "";
+    if (!process.env.SITEMINDER_API_URL) {
+      throw new Error("SITEMINDER_API_URL is not defined in environment variables.");
+    }
+    if (!process.env.SITEMINDER_API_KEY) {
+      throw new Error("SITEMINDER_API_KEY is not defined in environment variables.");
+    }
+    this.baseUrl = process.env.SITEMINDER_API_URL;
+    this.apiKey = process.env.SITEMINDER_API_KEY;
     this.timeoutMs = 15000;
   }
 

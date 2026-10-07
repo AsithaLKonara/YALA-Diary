@@ -25,7 +25,7 @@ export async function GET() {
       availabilityStatus: "Healthy",
       lastRequest: new Date().toISOString(),
       lastResponse: `200 OK (${duration}ms)`,
-      providerUrl: process.env.SITEMINDER_API_URL || "https://api.siteminder.com/sandbox/v1"
+      providerUrl: process.env.SITEMINDER_API_URL as string
     });
   } catch (error: any) {
     console.error("SiteMinder Test Error:", error);

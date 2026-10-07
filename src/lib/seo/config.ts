@@ -1,8 +1,8 @@
 export const siteConfig = {
   name: "Yala Diary",
   description: "Experience the ultimate safari adventure in Yala National Park. Book tailored safari packages, luxury camping, and expert guides.",
-  url: "https://theyaladiary.com",
-  ogImage: "https://theyaladiary.com/images/og-image.jpg",
+  url: process.env.NEXT_PUBLIC_APP_URL as string,
+  ogImage: `${process.env.NEXT_PUBLIC_APP_URL}/images/og-image.jpg`,
   twitterHandle: "@yaladiary",
   keywords: [
     "Yala Safari",
@@ -13,8 +13,8 @@ export const siteConfig = {
     "Leopard Safari Sri Lanka"
   ],
   links: {
-    facebook: "https://facebook.com/yaladiary",
-    instagram: "https://instagram.com/yaladiary",
-    twitter: "https://twitter.com/yaladiary"
+    facebook: process.env.NEXT_PUBLIC_FACEBOOK_URL as string,
+    instagram: process.env.NEXT_PUBLIC_INSTAGRAM_URL as string,
+    twitter: process.env.NEXT_PUBLIC_TWITTER_URL as string
   }
 };

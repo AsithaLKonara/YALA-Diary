@@ -167,7 +167,10 @@ export async function POST(req: Request) {
     }
 
     // Create Stripe Checkout Session
-    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    if (!process.env.NEXT_PUBLIC_APP_URL) {
+      throw new Error("NEXT_PUBLIC_APP_URL is not defined in environment variables.");
+    }
+    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL;
     
     // For zero total revenue, just confirm immediately
     if (booking.totalRevenue <= 0) {
@@ -179,8 +182,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, booking }, { status: 201 });
     }
 
-    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY === 'sk_test_mock') {
-      console.warn("Using mock Stripe checkout session because STRIPE_SECRET_KEY is not set.");
+    if (process.env.USE_MOCK_PAYMENTS === 'true') {
+      console.warn("Using mock Stripe checkout session because USE_MOCK_PAYMENTS is true.");
       // Automatically confirm the booking for local testing
       await prisma.booking.update({
         where: { id: booking.id },

@@ -2,11 +2,14 @@ import { Resend } from 'resend';
 import { BookingConfirmationEmail } from '@/emails/BookingConfirmationEmail';
 import { AdminBookingNotificationEmail } from '@/emails/AdminBookingNotificationEmail';
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_test_mock');
+if (!process.env.RESEND_API_KEY) {
+  throw new Error('RESEND_API_KEY is not defined in environment variables.');
+}
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendBookingConfirmationEmail(booking: any) {
   try {
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const fromEmail = process.env.RESEND_FROM_EMAIL as string;
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: booking.guestEmail,
@@ -27,8 +30,8 @@ export async function sendBookingConfirmationEmail(booking: any) {
 
 export async function sendAdminNotificationEmail(booking: any) {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || 'info@theyaladiary.com';
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const adminEmail = process.env.ADMIN_EMAIL as string;
+    const fromEmail = process.env.RESEND_FROM_EMAIL as string;
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: adminEmail,
