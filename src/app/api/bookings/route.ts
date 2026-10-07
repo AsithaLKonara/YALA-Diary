@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getBaseUrl } from "@/lib/seo/config";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { calculateSafariPrice, calculateServicePrice } from "@/lib/pricing";
@@ -167,10 +168,7 @@ export async function POST(req: Request) {
     }
 
     // Create Stripe Checkout Session
-    if (!process.env.NEXT_PUBLIC_APP_URL) {
-      throw new Error("NEXT_PUBLIC_APP_URL is not defined in environment variables.");
-    }
-    const origin = req.headers.get("origin") || process.env.NEXT_PUBLIC_APP_URL;
+    const origin = req.headers.get("origin") || getBaseUrl();
     
     // For zero total revenue, just confirm immediately
     if (booking.totalRevenue <= 0) {

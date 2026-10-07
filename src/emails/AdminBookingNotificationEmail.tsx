@@ -11,6 +11,7 @@ import {
   Text,
   Link,
 } from '@react-email/components';
+import { getBaseUrl } from '@/lib/seo/config';
 
 interface AdminBookingNotificationProps {
   booking: {
@@ -46,7 +47,7 @@ export const AdminBookingNotificationEmail = ({
   const checkOutDate = booking.checkOut ? new Date(booking.checkOut).toLocaleString() : 'N/A';
   const bookingDate = booking.createdAt ? new Date(booking.createdAt).toLocaleString() : 'N/A';
   const totalGuests = booking.adults + booking.children;
-  const adminUrl = `${process.env.NEXT_PUBLIC_APP_URL}/admin/bookings/${booking.id}`;
+  const adminUrl = `${getBaseUrl()}/admin/bookings/${booking.id}`;
 
   return (
     <Html>

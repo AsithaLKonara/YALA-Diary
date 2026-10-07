@@ -1,8 +1,14 @@
+export const getBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+};
+
 export const siteConfig = {
   name: "Yala Diary",
   description: "Experience the ultimate safari adventure in Yala National Park. Book tailored safari packages, luxury camping, and expert guides.",
-  url: process.env.NEXT_PUBLIC_APP_URL as string,
-  ogImage: `${process.env.NEXT_PUBLIC_APP_URL}/images/og-image.jpg`,
+  url: getBaseUrl(),
+  ogImage: `${getBaseUrl()}/images/og-image.jpg`,
   twitterHandle: "@yaladiary",
   keywords: [
     "Yala Safari",
