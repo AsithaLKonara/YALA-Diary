@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { X, CheckCircle, Clock, CalendarDays } from 'lucide-react';
 
@@ -15,7 +16,12 @@ export default function PackageDetailsModal({
   const heroImage = (pkg as any).images?.[0] || "/images/assets/leapords/519f7d6a-069a-4628-8711-2dd4b07647bc.jpg";
   const inclusions = (pkg as any).inclusions || [];
 
-  return (
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
       backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', zIndex: 9999,
@@ -70,6 +76,7 @@ export default function PackageDetailsModal({
 
           {pkg.description ? (
             <div 
+              className="rich-text"
               style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}
               dangerouslySetInnerHTML={{ __html: pkg.description }} 
             />
@@ -101,6 +108,7 @@ export default function PackageDetailsModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
