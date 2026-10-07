@@ -7,10 +7,11 @@ const BUCKET = process.env.AWS_S3_BUCKET_NAME || "assets";
 
 export async function GET(
   request: Request,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
-    const key = params.path.join("/");
+    const resolvedParams = await params;
+    const key = resolvedParams.path.join("/");
     const command = new GetObjectCommand({
       Bucket: BUCKET,
       Key: key,
