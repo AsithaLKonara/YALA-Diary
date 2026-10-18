@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { X, Loader2, Plus, Trash2 } from "lucide-react";
 import CustomConfirmDialog from "./CustomConfirmDialog";
 import type { ServicePricingOptions, PricingDimension, ServicePricingTier } from "@/lib/pricing";
+import { cleanRichText } from "@/lib/sanitizeHtml";
 import dynamic from "next/dynamic";
 import "react-quill-new/dist/quill.snow.css";
 
@@ -110,7 +111,7 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
 
       const payload = {
         name: formData.name,
-        description: formData.description,
+        description: cleanRichText(formData.description),
         category: formData.category,
         ...legacy,
         pricingOptions: updatedPricingOptions,

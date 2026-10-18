@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Loader2, Plus, Trash2 } from "lucide-react";
 import CustomConfirmDialog from "./CustomConfirmDialog";
 import type { SafariPricingRules, GroupTier } from "@/lib/pricing";
+import { cleanRichText } from "@/lib/sanitizeHtml";
 import dynamic from "next/dynamic";
 import "react-quill-new/dist/quill.snow.css";
 
@@ -21,8 +22,8 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
   const [errorDialog, setErrorDialog] = useState<{isOpen: boolean, message: string}>({isOpen: false, message: ""});
   const [files, setFiles] = useState<File[]>([]);
   const [availableExtras, setAvailableExtras] = useState<any[]>([]);
-  const [selectedExtras, setSelectedExtras] = useState<string[]>(
-    editData?.extraServices ? editData.extraServices.map((e: any) => e.id) : []
+  const [selectedExtras, setSelectedExtras] = useState<string[]>(() =>
+    editData?.extraServices ? editData.extraServices.map((e: any) => typeof e === 'string' ? e : e.id) : []
   );
 
   const [formData, setFormData] = useState({
@@ -42,7 +43,7 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
 
   useEffect(() => {
     if (editData?.extraServices) {
-      setSelectedExtras(editData.extraServices.map((e: any) => e.id));
+      setSelectedExtras(editData.extraServices.map((e: any) => typeof e === 'string' ? e : e.id));
     }
   }, [editData]);
 
@@ -79,6 +80,7 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
       const basePrice = computeBasePrice(pricingRules);
       const payload = {
         ...formData,
+        description: cleanRichText(formData.description),
         basePrice,
         pricingType: pricingRules.strategyType === "PRIVATE_FLAT" ? "PER_JEEP" : "PER_PERSON",
         pricingRules,
@@ -401,6 +403,7 @@ export default function NewPackagePanel({ onClose, onSuccess, editData }: { onCl
                           else setSelectedExtras(selectedExtras.filter(id => id !== ext.id));
                         }} />
                       {ext.name} (from ${ext.basePrice})
+                      {!ext.isActive && <span style={{ fontSize: '0.75rem', color: '#ef4444', marginLeft: 4 }}>(Inactive)</span>}
                     </label>
                   ))}
                 </div>

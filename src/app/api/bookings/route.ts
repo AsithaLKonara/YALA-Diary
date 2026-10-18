@@ -26,14 +26,32 @@ export async function POST(req: Request) {
     const checkOutDate = new Date(checkOut);
     const nights = Math.max(1, Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)));
     
+    // If safari package is specified, fetch it with active extraServices for validation
+    let allowedExtraServiceIds: Set<string> | null = null;
+    let pkg: any = null;
+
+    if (isSafariOnly || safariPackageId) {
+      if (!safariPackageId) return NextResponse.json({ error: "Missing Safari Package ID" }, { status: 400 });
+      pkg = await prisma.safariPackage.findUnique({
+        where: { id: safariPackageId },
+        include: { extraServices: { where: { isActive: true } } }
+      });
+      if (!pkg || !pkg.isActive) return NextResponse.json({ error: "Invalid Safari Package" }, { status: 400 });
+      allowedExtraServiceIds = new Set(pkg.extraServices.map((e: any) => e.id));
+    }
+
     // Validate addons and calculate revenue
     let addOnRevenue = 0;
     const addOnRecords = [];
     if (addons && Array.isArray(addons)) {
       for (const addon of addons) {
         const addonId = typeof addon === 'string' ? addon : addon.id;
+        // Enforce that addons must be allowed for the selected safari package
+        if (allowedExtraServiceIds && !allowedExtraServiceIds.has(addonId)) {
+          continue;
+        }
         const addonService = await prisma.extraService.findUnique({ where: { id: addonId }});
-        if (addonService) {
+        if (addonService && addonService.isActive) {
           let cost = 0;
           if (addonService.pricingOptions) {
             const res = calculateServicePrice(addonService.pricingOptions as any, adults, children, addon.selectedOptions);
@@ -54,10 +72,6 @@ export async function POST(req: Request) {
     let productName = "Yala Diary Booking";
 
     if (isSafariOnly) {
-      if (!safariPackageId) return NextResponse.json({ error: "Missing Safari Package ID" }, { status: 400 });
-      
-      const pkg = await prisma.safariPackage.findUnique({ where: { id: safariPackageId } });
-      if (!pkg) return NextResponse.json({ error: "Invalid Safari Package" }, { status: 400 });
 
       let calculatedSafariPrice = 0;
       if (pkg.pricingRules) {

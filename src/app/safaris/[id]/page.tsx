@@ -7,6 +7,7 @@ import { SafariPackageService } from "@/modules/packages/services/SafariPackageS
 import Footer from "@/components/Footer";
 import JsonLd from "@/components/seo/JsonLd";
 import { siteConfig } from "@/lib/seo/config";
+import { cleanRichText } from "@/lib/sanitizeHtml";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -138,8 +139,9 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
             </h2>
             {pkg.description ? (
               <div 
+                className="rich-text"
                 style={{ color: "rgba(255,255,255,0.7)", lineHeight: 1.8, fontSize: "1.1rem" }}
-                dangerouslySetInnerHTML={{ __html: pkg.description }} 
+                dangerouslySetInnerHTML={{ __html: cleanRichText(pkg.description) }} 
               />
             ) : (
               <p style={{ color: "rgba(255,255,255,0.7)", lineHeight: 1.8, fontSize: "1.1rem" }}>
@@ -187,7 +189,7 @@ export default async function PackageDetailsPage({ params }: { params: Promise<{
                     <div style={{ padding: "20px" }}>
                       <h4 style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: "8px" }}>{service.name}</h4>
                       {service.description ? (
-                        <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", marginBottom: "20px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }} dangerouslySetInnerHTML={{ __html: service.description }} />
+                        <div style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", marginBottom: "20px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word" }} dangerouslySetInnerHTML={{ __html: cleanRichText(service.description) }} />
                       ) : (
                         <p style={{ fontSize: "0.85rem", color: "rgba(255,255,255,0.5)", marginBottom: "20px", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                           Enhance your safari experience.

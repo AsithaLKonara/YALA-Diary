@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { X, CheckCircle, Plus } from 'lucide-react';
 import { useCurrency } from '@/context/CurrencyContext';
+import { cleanRichText } from '@/lib/sanitizeHtml';
 
 export default function ExtraServiceModal({ 
   service, 
@@ -57,7 +58,7 @@ export default function ExtraServiceModal({
             <div 
               className="rich-text"
               style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}
-              dangerouslySetInnerHTML={{ __html: service.description }} 
+              dangerouslySetInnerHTML={{ __html: cleanRichText(service.description) }} 
             />
           ) : (
             <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}>

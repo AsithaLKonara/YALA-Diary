@@ -24,9 +24,13 @@ export async function POST(request: Request) {
     // Calculate Extras Price
     let extrasTotal = 0;
     const itemizedExtras = [];
+    const allowedServiceIds = new Set((selectedPackage.extraServices || []).map((e: any) => e.id));
 
     for (const extra of extraServices) {
       const { serviceId, quantity = 1 } = extra;
+      if (!allowedServiceIds.has(serviceId)) {
+        continue;
+      }
       const price = await ExtraServiceManager.calculatePrice(serviceId, quantity, distanceKm);
       extrasTotal += price;
       itemizedExtras.push({ serviceId, quantity, price });

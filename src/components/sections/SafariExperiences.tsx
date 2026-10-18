@@ -3,6 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import Link from "next/link";
 import { useCurrency } from "@/context/CurrencyContext";
+import { cleanRichText } from "@/lib/sanitizeHtml";
 
 export default function SafariExperiences({ packages }: { packages?: any[] }) {
   const { formatPrice } = useCurrency();
@@ -72,7 +73,7 @@ export default function SafariExperiences({ packages }: { packages?: any[] }) {
                 <div className="experience-content">
                   <h3>{title}</h3>
                   {exp.description ? (
-                    <div style={{ fontSize: '0.9rem', marginBottom: '15px', color: 'rgba(255,255,255,0.7)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} dangerouslySetInnerHTML={{ __html: exp.description }} />
+                    <div style={{ fontSize: '0.9rem', marginBottom: '15px', color: 'rgba(255,255,255,0.7)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', overflowWrap: 'anywhere' }} dangerouslySetInnerHTML={{ __html: cleanRichText(exp.description) }} />
                   ) : (
                     <p>{desc}</p>
                   )}

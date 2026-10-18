@@ -12,6 +12,7 @@ import type { SafariPricingRules, ServicePricingOptions } from "@/lib/pricing";
 import CustomDatePicker from "@/components/ui/CustomDatePicker";
 import PackageDetailsModal from "./PackageDetailsModal";
 import ExtraServiceModal from "./ExtraServiceModal";
+import { cleanRichText } from "@/lib/sanitizeHtml";
 
 interface ExtraService {
   id: string;
@@ -481,23 +482,46 @@ function Step2({ data, updateData, next, back, availablePackages, setAvailablePa
 // -----------------------------------------------------------------------------
 function Step3({ data, updateData, next, back }: any) {
   const { formatPrice } = useCurrency();
-  const [availableAddons, setAvailableAddons] = useState<ExtraService[]>([]);
+  const selectedPackage = data.safariPackage;
+  const [availableAddons, setAvailableAddons] = useState<ExtraService[]>(() => {
+    return (selectedPackage?.extraServices || []).filter((a: any) => a.isActive !== false);
+  });
   const [loading, setLoading] = useState(false);
   const [selectedServiceModal, setSelectedServiceModal] = useState<any>(null);
 
   // Local state for dropdown selections: addonId -> { dimensionKey: selectedValue }
   const [addonSelections, setAddonSelections] = useState<Record<string, Record<string, string>>>({});
 
+  const packageId = selectedPackage?.id;
+
   useEffect(() => {
+    if (!packageId) {
+      setAvailableAddons([]);
+      if (data.addons && data.addons.length > 0) {
+        updateData({ addons: [] });
+      }
+      return;
+    }
+
     setLoading(true);
-    fetch("/api/booking/addons")
+    fetch(`/api/booking/addons?packageId=${packageId}`)
       .then(res => res.json())
       .then(json => {
         if (json.addons) {
-          setAvailableAddons(json.addons);
+          const addonsList: ExtraService[] = json.addons;
+          setAvailableAddons(addonsList);
+
+          // Prune any previously selected addons not available in this package
+          const validIds = new Set(addonsList.map((a: any) => a.id));
+          const currentAddons = data.addons || [];
+          const pruned = currentAddons.filter((a: any) => validIds.has(a.id));
+          if (pruned.length !== currentAddons.length) {
+            updateData({ addons: pruned });
+          }
+
           // Initialize defaults for TIERED_OPTIONS
           const initialSelections: Record<string, Record<string, string>> = {};
-          json.addons.forEach((a: any) => {
+          addonsList.forEach((a: any) => {
             const opts = a.pricingOptions as ServicePricingOptions | null;
             if (opts?.strategyType === "TIERED_OPTIONS" && opts.dimensions) {
               const def: Record<string, string> = {};
@@ -506,8 +530,8 @@ function Step3({ data, updateData, next, back }: any) {
             }
           });
           // Override with any already selected in data.addons
-          data.addons.forEach((sel: any) => {
-            if (sel.selectedOptions) {
+          currentAddons.forEach((sel: any) => {
+            if (sel.selectedOptions && validIds.has(sel.id)) {
               initialSelections[sel.id] = { ...initialSelections[sel.id], ...sel.selectedOptions };
             }
           });
@@ -515,7 +539,7 @@ function Step3({ data, updateData, next, back }: any) {
         }
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [packageId]);
 
   const handleOptionChange = (addonId: string, dimKey: string, val: string) => {
     setAddonSelections(prev => {
@@ -570,8 +594,13 @@ function Step3({ data, updateData, next, back }: any) {
           <Loader2 size={32} className="spinner" style={{ margin: '0 auto', color: 'var(--primary)' }} />
         </div>
       ) : availableAddons.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 40, background: "rgba(255,255,255,0.05)", borderRadius: 12 }}>
-          <p style={{ color: 'rgba(255,255,255,0.5)' }}>No extra services available.</p>
+        <div style={{ textAlign: "center", padding: 48, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12 }}>
+          <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1.05rem', fontWeight: 600, marginBottom: 8 }}>
+            No extra services configured for <span style={{ color: 'var(--primary)' }}>{data.safariPackage?.name || "this package"}</span>.
+          </p>
+          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.875rem' }}>
+            Click continue below to proceed to park entrance tickets.
+          </p>
         </div>
       ) : (
         <div>
@@ -672,8 +701,9 @@ function Step3({ data, updateData, next, back }: any) {
                     {a.description && (
                       <div style={{
                         fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, marginBottom: 14,
-                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                      }} dangerouslySetInnerHTML={{ __html: a.description }} />
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                        wordBreak: 'break-word', overflowWrap: 'anywhere'
+                      }} dangerouslySetInnerHTML={{ __html: cleanRichText(a.description) }} />
                     )}
                   </div>
 
@@ -770,7 +800,11 @@ function Step3({ data, updateData, next, back }: any) {
       <div className="booking-actions" style={{ marginTop: 30 }}>
         <button className="btn-secondary" onClick={back}>← Back</button>
         <button className="btn-primary" onClick={next}>
-          {selectedCount > 0 ? `Add ${selectedCount} Service${selectedCount !== 1 ? 's' : ''} & Continue` : "Skip & Continue"} →
+          {availableAddons.length === 0
+            ? "Continue to Tickets →"
+            : selectedCount > 0
+            ? `Add ${selectedCount} Service${selectedCount !== 1 ? 's' : ''} & Continue →`
+            : "Skip & Continue →"}
         </button>
       </div>
     </div>

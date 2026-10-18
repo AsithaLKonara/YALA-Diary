@@ -2,14 +2,16 @@ import { prisma } from "@/lib/prisma";
 import { SafariPackage, SafariPackageType, PricingType } from "@/generated/prisma/client";
 import { unlink } from "fs/promises";
 import { join } from "path";
+import { cleanRichText } from "@/lib/sanitizeHtml";
 
 export class SafariPackageService {
   /**
    * Retrieves all active safari packages.
    */
-  static async listActivePackages(): Promise<SafariPackage[]> {
+  static async listActivePackages() {
     return prisma.safariPackage.findMany({
       where: { isActive: true },
+      include: { extraServices: { where: { isActive: true } } },
       orderBy: { basePrice: "asc" },
     });
   }
@@ -17,8 +19,9 @@ export class SafariPackageService {
   /**
    * Retrieves all safari packages (for admin).
    */
-  static async listAllPackages(): Promise<SafariPackage[]> {
+  static async listAllPackages() {
     return prisma.safariPackage.findMany({
+      include: { extraServices: true },
       orderBy: { createdAt: "desc" },
     });
   }
@@ -29,7 +32,7 @@ export class SafariPackageService {
   static async getPackageById(id: string) {
     return prisma.safariPackage.findUnique({
       where: { id },
-      include: { extraServices: true }
+      include: { extraServices: { where: { isActive: true } } }
     });
   }
 
@@ -53,15 +56,17 @@ export class SafariPackageService {
     inclusions: string[];
     images?: string[];
     extraServiceIds?: string[];
-  }): Promise<SafariPackage> {
+  }) {
     return prisma.safariPackage.create({
       data: {
         ...data,
+        description: data.description ? cleanRichText(data.description) : data.description,
         images: data.images || [],
         extraServices: extraServiceIds?.length ? {
           connect: extraServiceIds.map(id => ({ id }))
         } : undefined
       },
+      include: { extraServices: true }
     });
   }
 
@@ -89,15 +94,20 @@ export class SafariPackageService {
       isActive: boolean;
       extraServiceIds: string[];
     }>
-  ): Promise<SafariPackage> {
+  ) {
+    const updateData = { ...data };
+    if (updateData.description !== undefined) {
+      updateData.description = cleanRichText(updateData.description);
+    }
     return prisma.safariPackage.update({
       where: { id },
       data: {
-        ...data,
+        ...updateData,
         extraServices: extraServiceIds ? {
           set: extraServiceIds.map(serviceId => ({ id: serviceId }))
         } : undefined
       },
+      include: { extraServices: true }
     });
   }
 

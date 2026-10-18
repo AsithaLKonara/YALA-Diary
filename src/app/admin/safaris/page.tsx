@@ -8,6 +8,7 @@ import NewExtraServicePanel from "@/components/admin/NewExtraServicePanel";
 import TicketPanel from "@/components/admin/TicketPanel";
 import CustomConfirmDialog from "@/components/admin/CustomConfirmDialog";
 import { getDisplayMinPrice, getDisplayMinPriceLabel, ServicePricingOptions } from "@/lib/pricing";
+import { cleanRichText } from "@/lib/sanitizeHtml";
 
 export default function PackagesPage() {
   const [activeTab, setActiveTab] = useState("packages");
@@ -166,15 +167,9 @@ export default function PackagesPage() {
               No safari packages created yet. Click "Add Package" to start.
             </div>
           ) : (
-            <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+            <div className="admin-grid">
               {packages.map((pkg) => (
-                <div key={pkg.id} style={{ 
-                  backgroundColor: 'var(--dash-card)', 
-                  border: '1px solid var(--dash-border)', 
-                  borderRadius: '12px', 
-                  padding: '20px',
-                  display: 'flex', flexDirection: 'column', gap: '12px'
-                }}>
+                <div key={pkg.id} className="admin-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{pkg.name}</h3>
@@ -220,6 +215,24 @@ export default function PackagesPage() {
                       </ul>
                     </div>
                   )}
+
+                  {pkg.extraServices && pkg.extraServices.length > 0 && (
+                    <div style={{ marginTop: '8px' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--dash-muted)', marginBottom: '4px' }}>Available Extras:</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {pkg.extraServices.map((es: any) => (
+                          <span key={es.id} style={{
+                            fontSize: '0.75rem', padding: '2px 8px', borderRadius: '4px',
+                            background: es.isActive ? 'rgba(154,205,50,0.1)' : 'rgba(255,255,255,0.05)',
+                            color: es.isActive ? 'var(--primary)' : 'var(--dash-muted)',
+                            border: `1px solid ${es.isActive ? 'rgba(154,205,50,0.2)' : 'var(--dash-border)'}`
+                          }}>
+                            {es.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -230,15 +243,9 @@ export default function PackagesPage() {
               No extra services created yet. Click "Add Service" to start.
             </div>
           ) : (
-            <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+            <div className="admin-grid">
               {services.map((srv) => (
-                <div key={srv.id} style={{ 
-                  backgroundColor: 'var(--dash-card)', 
-                  border: '1px solid var(--dash-border)', 
-                  borderRadius: '12px', 
-                  padding: '20px',
-                  display: 'flex', flexDirection: 'column', gap: '12px'
-                }}>
+                <div key={srv.id} className="admin-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{srv.name}</h3>
@@ -306,8 +313,9 @@ export default function PackagesPage() {
 
                   {srv.description && (
                     <div 
-                      style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--dash-muted)' }}
-                      dangerouslySetInnerHTML={{ __html: srv.description }}
+                      className="admin-rich-text"
+                      style={{ marginTop: '8px' }}
+                      dangerouslySetInnerHTML={{ __html: cleanRichText(srv.description) }}
                     />
                   )}
                 </div>
@@ -320,15 +328,9 @@ export default function PackagesPage() {
               No entrance tickets created yet. Click "Add Ticket" to start.
             </div>
           ) : (
-            <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+            <div className="admin-grid">
               {tickets.map((tkt) => (
-                <div key={tkt.id} style={{ 
-                  backgroundColor: 'var(--dash-card)', 
-                  border: '1px solid var(--dash-border)', 
-                  borderRadius: '12px', 
-                  padding: '20px',
-                  display: 'flex', flexDirection: 'column', gap: '12px'
-                }}>
+                <div key={tkt.id} className="admin-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{tkt.name}</h3>

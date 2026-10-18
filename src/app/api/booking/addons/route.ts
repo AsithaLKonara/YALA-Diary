@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const packageId = searchParams.get("packageId");
+
+    let whereClause: any = { isActive: true };
+
+    if (packageId) {
+      whereClause.safariPackages = {
+        some: { id: packageId, isActive: true }
+      };
+    }
+
     const addons = await prisma.extraService.findMany({
-      where: { isActive: true },
+      where: whereClause,
+      orderBy: { category: "asc" }
     });
     return NextResponse.json({ addons }, { status: 200 });
   } catch (error) {

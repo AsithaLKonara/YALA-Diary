@@ -1082,3 +1082,66 @@ textarea.admin-input {
   .stat-grid { grid-template-columns: 1fr 1fr; }
   .settings-form-grid { grid-template-columns: 1fr; }
 }
+
+/* ─── Admin Card Grid & Rich Text Content ────────── */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 20px;
+}
+
+.admin-card {
+  background-color: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.admin-rich-text {
+  font-size: 0.85rem;
+  color: var(--dash-muted);
+  line-height: 1.55;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.admin-rich-text p {
+  margin-bottom: 8px;
+}
+
+.admin-rich-text p:last-child {
+  margin-bottom: 0;
+}
+
+.admin-rich-text ul {
+  list-style-type: disc;
+  padding-left: 20px;
+  margin-bottom: 8px;
+}
+
+.admin-rich-text ol {
+  list-style-type: decimal;
+  padding-left: 20px;
+  margin-bottom: 8px;
+}
+
+.admin-rich-text li {
+  margin-bottom: 4px;
+}
+
+.admin-rich-text strong,
+.admin-rich-text b {
+  font-weight: 600;
+  color: var(--dash-text);
+}
+

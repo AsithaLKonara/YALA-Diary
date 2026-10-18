@@ -4,7 +4,15 @@ import { PrismaClient } from "@/generated/prisma/client";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const connectionString = `${process.env.DATABASE_URL}`;
+function getConnectionString(): string {
+  let url = `${process.env.DATABASE_URL || ""}`;
+  if (url.includes("sslmode=require")) {
+    url = url.replace("sslmode=require", "sslmode=verify-full");
+  }
+  return url;
+}
+
+const connectionString = getConnectionString();
 
 const globalForPrisma = globalThis as unknown as {
   prisma4: PrismaClient | undefined;

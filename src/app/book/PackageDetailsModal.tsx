@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { X, CheckCircle, Clock, CalendarDays } from 'lucide-react';
+import { cleanRichText } from '@/lib/sanitizeHtml';
 
 
 export default function PackageDetailsModal({ 
@@ -78,7 +79,7 @@ export default function PackageDetailsModal({
             <div 
               className="rich-text"
               style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}
-              dangerouslySetInnerHTML={{ __html: pkg.description }} 
+              dangerouslySetInnerHTML={{ __html: cleanRichText(pkg.description) }} 
             />
           ) : (
             <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '1rem', lineHeight: 1.6, marginBottom: 30 }}>

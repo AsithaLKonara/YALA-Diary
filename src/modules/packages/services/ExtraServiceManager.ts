@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ExtraService, PricingModel } from "@/generated/prisma/client";
 import { unlink } from "fs/promises";
 import { join } from "path";
+import { cleanRichText } from "@/lib/sanitizeHtml";
 
 export class ExtraServiceManager {
   /**
@@ -38,6 +39,7 @@ export class ExtraServiceManager {
     return prisma.extraService.create({
       data: {
         ...data,
+        description: data.description ? cleanRichText(data.description) : data.description,
         images: data.images || []
       },
     });
@@ -59,9 +61,13 @@ export class ExtraServiceManager {
       isActive: boolean;
     }>
   ): Promise<ExtraService> {
+    const updateData = { ...data };
+    if (updateData.description !== undefined) {
+      updateData.description = cleanRichText(updateData.description);
+    }
     return prisma.extraService.update({
       where: { id },
-      data,
+      data: updateData,
     });
   }
 

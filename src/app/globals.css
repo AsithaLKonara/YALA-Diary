@@ -20,6 +20,7 @@
   --dash-warn:      #d4a017;
   --dash-success:   #4caf72;
   --dash-info:      #4a9fd4;
+  --dash-card:      #0d1a10;
   --dash-sidebar-w: 240px;
   --dash-topbar-h:  60px;
 }
@@ -434,8 +435,10 @@ a {
 /* Rich Text / Markdown Rendering Styles */
 .rich-text {
   word-wrap: break-word;
-  overflow-wrap: break-word;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   white-space: normal;
+  min-width: 0;
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.95rem;
   line-height: 1.6;
