@@ -11,15 +11,17 @@ export async function PUT(request: Request, context: any) {
     const params = await context.params;
 
     const body = await request.json();
-    const { name, type, adultPrice, childPrice, isActive } = body;
+    const { name, type, category, adultPrice, childPrice, fixedPrice, isActive } = body;
 
     const updatedTicket = await prisma.entranceTicket.update({
       where: { id: params.id },
       data: {
         name,
         type,
+        category: category !== undefined ? category : undefined,
         adultPrice: adultPrice !== undefined ? Number(adultPrice) : undefined,
         childPrice: childPrice !== undefined ? Number(childPrice) : undefined,
+        fixedPrice: fixedPrice !== undefined ? Number(fixedPrice) : undefined,
         isActive: isActive !== undefined ? isActive : undefined,
       }
     });

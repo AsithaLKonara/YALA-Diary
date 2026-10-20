@@ -329,38 +329,79 @@ export default function PackagesPage() {
             </div>
           ) : (
             <div className="admin-grid">
-              {tickets.map((tkt) => (
-                <div key={tkt.id} className="admin-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 500 }}>{tkt.name}</h3>
-                      <span style={{ 
-                        fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', alignSelf: 'flex-start',
-                        backgroundColor: tkt.isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                        color: tkt.isActive ? '#22c55e' : '#ef4444'
-                      }}>
-                        {tkt.isActive ? "Active" : "Inactive"}
-                      </span>
-                    </div>
+              {tickets.map((tkt) => {
+                const isLocal = tkt.category === "LOCAL";
+                const typeLabel = tkt.type === "ALL" 
+                  ? "All Safari Types" 
+                  : tkt.type === "MORNING" ? "Morning"
+                  : tkt.type === "AFTERNOON" ? "Afternoon"
+                  : tkt.type === "FULL_DAY" ? "Full Day"
+                  : tkt.type === "PRIVATE" ? "Private"
+                  : tkt.type;
 
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => handleEditTicket(tkt)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dash-muted)', padding: '4px' }}>
-                        <Edit2 size={16} />
-                      </button>
-                      <button onClick={() => setConfirmDialog({ isOpen: true, type: 'ticket', id: tkt.id, name: tkt.name })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}>
-                        <Trash2 size={16} />
-                      </button>
+                return (
+                  <div key={tkt.id} className="admin-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{tkt.name}</h3>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          <span style={{ 
+                            fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px', fontWeight: 600,
+                            backgroundColor: isLocal ? 'rgba(234, 179, 8, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                            color: isLocal ? '#facc15' : '#38bdf8'
+                          }}>
+                            {isLocal ? "Local Resident" : "Foreign Visitor"}
+                          </span>
+                          <span style={{ 
+                            fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.08)', color: 'rgba(255, 255, 255, 0.8)'
+                          }}>
+                            {typeLabel}
+                          </span>
+                          <span style={{ 
+                            fontSize: '0.72rem', padding: '2px 8px', borderRadius: '4px',
+                            backgroundColor: tkt.isActive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                            color: tkt.isActive ? '#22c55e' : '#ef4444'
+                          }}>
+                            {tkt.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => handleEditTicket(tkt)} title="Edit Ticket" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--dash-muted)', padding: '4px' }}>
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => setConfirmDialog({ isOpen: true, type: 'ticket', id: tkt.id, name: tkt.name })} title="Delete Ticket" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: '4px' }}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--dash-border)' }}>
+                      {isLocal ? (
+                        <>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--dash-text)' }}>
+                            Fixed / Safari: <strong style={{ color: 'var(--primary)' }}>LKR {tkt.fixedPrice !== undefined && tkt.fixedPrice !== null ? Number(tkt.fixedPrice).toLocaleString() : "0"}</strong>
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--dash-text)', marginTop: 2 }}>
+                            Per Person: <strong>LKR {Number(tkt.adultPrice || 0).toLocaleString()}</strong>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--dash-text)' }}>
+                            Adult: <strong style={{ color: 'var(--primary)' }}>${tkt.adultPrice?.toFixed(2)}</strong>
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: 'var(--dash-text)', marginTop: 2 }}>
+                            Child: <strong>${tkt.childPrice?.toFixed(2)}</strong>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
-                  
-                  <div style={{ fontSize: '1rem', color: 'var(--dash-text)', marginTop: '8px' }}>
-                    Adult: $ {tkt.adultPrice?.toFixed(2)}
-                  </div>
-                  <div style={{ fontSize: '1rem', color: 'var(--dash-text)' }}>
-                    Child: $ {tkt.childPrice?.toFixed(2)}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )
         )}

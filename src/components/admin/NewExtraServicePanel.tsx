@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Loader2, Plus, Trash2 } from "lucide-react";
 import CustomConfirmDialog from "./CustomConfirmDialog";
-import type { ServicePricingOptions, PricingDimension, ServicePricingTier } from "@/lib/pricing";
+import type { ServicePricingOptions, PricingDimension, ServicePricingTier, MenuItemOption } from "@/lib/pricing";
 import { cleanRichText } from "@/lib/sanitizeHtml";
 import dynamic from "next/dynamic";
 import "react-quill-new/dist/quill.snow.css";
@@ -10,10 +10,74 @@ const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
 const PRESET_CATEGORIES = ["Food & Beverage", "Airport Transfer", "Destination Transfer", "Photography", "Ticketing"];
 
+const menuQuillModules = {
+  toolbar: [
+    ['bold', 'italic', 'underline'],
+    [{ list: 'ordered' }, { list: 'bullet' }],
+    ['clean']
+  ]
+};
+
 const DEFAULT_OPTIONS: ServicePricingOptions = {
   strategyType: "FLAT",
   flatPrice: 0,
 };
+
+interface MenuItemQuillProps {
+  value: string;
+  onChange: (val: string) => void;
+  placeholder?: string;
+}
+
+function MenuItemQuillEditor({ value, onChange, placeholder }: MenuItemQuillProps) {
+  const [internalVal, setInternalVal] = useState(value || "");
+
+  useEffect(() => {
+    const isParentEmpty = !value || value === "<p><br></p>" || value === "<p></p>";
+    const isInternalEmpty = !internalVal || internalVal === "<p><br></p>" || internalVal === "<p></p>";
+    if (isParentEmpty && isInternalEmpty) return;
+    if (value !== internalVal) {
+      setInternalVal(value || "");
+    }
+  }, [value]);
+
+  const handleChange = (newVal: string) => {
+    setInternalVal(newVal);
+    const cleanNew = (!newVal || newVal === "<p><br></p>" || newVal === "<p></p>") ? "" : newVal;
+    const cleanCurrent = (!value || value === "<p><br></p>" || value === "<p></p>") ? "" : value;
+    if (cleanNew !== cleanCurrent) {
+      onChange(cleanNew);
+    }
+  };
+
+  return (
+    <div style={{ backgroundColor: 'white', color: 'black', borderRadius: '4px' }}>
+      <style>{`
+        .menu-quill .ql-container {
+          min-height: 90px;
+          max-height: 200px;
+          resize: vertical;
+          overflow-y: auto;
+        }
+        .menu-quill .ql-editor {
+          font-size: 0.85rem;
+          line-height: 1.45;
+        }
+        .menu-quill .ql-toolbar {
+          padding: 4px 8px;
+        }
+      `}</style>
+      <ReactQuill 
+        className="menu-quill"
+        theme="snow"
+        modules={menuQuillModules}
+        value={internalVal}
+        onChange={handleChange}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
 
 export default function NewExtraServicePanel({ onClose, onSuccess, editData }: { onClose: () => void, onSuccess: () => void, editData?: any }) {
   const [loading, setLoading] = useState(false);
@@ -30,6 +94,9 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
   const [pricingOptions, setPricingOptions] = useState<ServicePricingOptions>(() => {
     if (editData?.pricingOptions) return editData.pricingOptions as ServicePricingOptions;
     // Migrate from old model
+    if (editData?.category === "Food & Beverage") {
+      return { strategyType: "MENU_OPTIONS", menus: [] };
+    }
     if (editData?.pricingModel === "PER_PERSON") return { strategyType: "PER_PERSON", adultRate: editData.basePrice, childRate: 0 };
     if (editData?.pricingModel === "PER_KM") return { strategyType: "PER_KM", baseRate: editData.basePrice, perKmRate: editData.perKmRate ?? 0 };
     return { strategyType: "FLAT", flatPrice: editData?.basePrice ?? 0 };
@@ -45,11 +112,58 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
       const min = tiers.length > 0 ? Math.min(...tiers.map(t => t.price)) : 0;
       return { basePrice: min, pricingModel: "FLAT_RATE", perKmRate: null };
     }
+    if (opts.strategyType === "MENU_OPTIONS") {
+      const menus = opts.menus ?? [];
+      const min = menus.length > 0 ? Math.min(...menus.map(m => m.price)) : 0;
+      return { basePrice: min, pricingModel: "PER_PERSON", perKmRate: null };
+    }
     return { basePrice: 0, pricingModel: "FLAT_RATE", perKmRate: null };
   };
 
   const updateOptions = (patch: Partial<ServicePricingOptions>) => {
     setPricingOptions(prev => ({ ...prev, ...patch }));
+  };
+
+  // Menu helpers (Food & Beverage)
+  const addMenu = () => {
+    setPricingOptions(prev => ({
+      ...prev,
+      menus: [
+        ...(prev.menus ?? []),
+        {
+          id: `menu_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          name: "",
+          description: "",
+          price: 0,
+        }
+      ]
+    }));
+  };
+
+  const updateMenu = (i: number, patch: Partial<MenuItemOption>) => {
+    setPricingOptions(prev => {
+      const menus = [...(prev.menus ?? [])];
+      if (!menus[i]) return prev;
+      const current = menus[i];
+      let hasChange = false;
+      for (const [k, v] of Object.entries(patch)) {
+        if ((current as any)[k] !== v) {
+          hasChange = true;
+          break;
+        }
+      }
+      if (!hasChange) return prev;
+      menus[i] = { ...current, ...patch };
+      return { ...prev, menus };
+    });
+  };
+
+  const removeMenu = (i: number) => {
+    setPricingOptions(prev => {
+      const menus = [...(prev.menus ?? [])];
+      menus.splice(i, 1);
+      return { ...prev, menus };
+    });
   };
 
   // Dimension helpers
@@ -103,11 +217,25 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
       }
 
       const legacy = computeLegacy(pricingOptions);
-      const updatedPricingOptions = {
+      const updatedPricingOptions: ServicePricingOptions = {
         ...pricingOptions,
         minGuests: formData.minGuests ? parseInt(formData.minGuests.toString(), 10) : null,
         maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity.toString(), 10) : null,
       };
+
+      if (pricingOptions.strategyType === "MENU_OPTIONS") {
+        const menus = (pricingOptions.menus ?? []).map(m => ({
+          ...m,
+          description: cleanRichText(m.description || "")
+        }));
+        if (menus.length === 0) {
+          throw new Error("Please add at least one menu option for Food & Beverage.");
+        }
+        if (menus.some(m => !m.name.trim())) {
+          throw new Error("All menu options must have a title.");
+        }
+        updatedPricingOptions.menus = menus;
+      }
 
       const payload = {
         name: formData.name,
@@ -221,6 +349,7 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
               {/* Strategy Selector */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
                 {[
+                  { value: "MENU_OPTIONS", label: "Multiple Menus (Food & Beverage)", desc: "Guests select specific menus (e.g. Sri Lankan, Continental) & enter counts" },
                   { value: "FLAT", label: "Flat Rate", desc: "One fixed price for any booking" },
                   { value: "PER_PERSON", label: "Per Person", desc: "Separate adult & child rates" },
                   { value: "PER_KM", label: "Per KM", desc: "Base charge plus per-km rate" },
@@ -375,6 +504,70 @@ export default function NewExtraServicePanel({ onClose, onSuccess, editData }: {
                       <p style={{ fontSize: '0.8rem', color: 'var(--dash-muted)', textAlign: 'center', padding: '8px 0' }}>Add price tiers for each combination of options.</p>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* MENU_OPTIONS (Food & Beverage) */}
+              {pricingOptions.strategyType === "MENU_OPTIONS" && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <label className="admin-label" style={{ margin: 0 }}>Menu Options</label>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--dash-muted)', marginTop: 2 }}>
+                        Define the menus guests can choose from for this package.
+                      </div>
+                    </div>
+                    <button type="button" onClick={addMenu}
+                      style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: '1px solid var(--dash-border)', color: 'var(--primary)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+                      <Plus size={14} /> Add Menu Option
+                    </button>
+                  </div>
+
+                  {(pricingOptions.menus ?? []).map((menu, i) => (
+                    <div key={menu.id || i} style={{ border: '1px solid var(--dash-border)', borderRadius: 8, padding: 14, background: 'rgba(0,0,0,0.2)' }}>
+                      <div style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'center' }}>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ fontSize: '0.75rem', color: 'var(--dash-muted)', display: 'block', marginBottom: 4 }}>Menu Title</label>
+                          <input type="text" className="admin-input" style={inputStyle}
+                            placeholder="e.g. Sri Lankan Traditional Breakfast"
+                            value={menu.name} onChange={e => updateMenu(i, { name: e.target.value })} required />
+                        </div>
+                        <div style={{ width: 120 }}>
+                          <label style={{ fontSize: '0.75rem', color: 'var(--dash-muted)', display: 'block', marginBottom: 4 }}>Price ($ / pax)</label>
+                          <input type="number" min={0} step={0.01} className="admin-input" style={inputStyle}
+                            placeholder="0.00"
+                            value={menu.price} onChange={e => updateMenu(i, { price: parseFloat(e.target.value) || 0 })} required />
+                        </div>
+                        <button type="button" onClick={() => removeMenu(i)}
+                          title="Delete Menu"
+                          style={{ background: 'none', border: 'none', color: 'var(--dash-danger)', cursor: 'pointer', padding: '6px', marginTop: 18 }}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--dash-muted)', display: 'block', marginBottom: 4 }}>
+                          Menu Inclusions / Dishes (Rich Text)
+                        </label>
+                        <MenuItemQuillEditor 
+                          value={menu.description || ""}
+                          onChange={(val) => updateMenu(i, { description: val })}
+                          placeholder="e.g. List included dishes, courses, beverages, dietary tags..."
+                        />
+                      </div>
+                    </div>
+                  ))}
+
+                  {(pricingOptions.menus ?? []).length === 0 && (
+                    <div style={{ padding: '24px', textAlign: 'center', border: '1px dashed var(--dash-border)', borderRadius: 8 }}>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--dash-muted)', margin: '0 0 10px' }}>
+                        No menu options added yet.
+                      </p>
+                      <button type="button" onClick={addMenu}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(154,205,50,0.1)', border: '1px solid rgba(154,205,50,0.3)', color: 'var(--primary)', borderRadius: 6, padding: '6px 14px', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
+                        <Plus size={14} /> Add First Menu
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

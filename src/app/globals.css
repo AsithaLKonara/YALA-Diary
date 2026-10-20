@@ -480,3 +480,46 @@ a {
   margin-bottom: 12px;
   font-weight: 600;
 }
+
+/* Compact Rich Text for Menu Inclusions & Service Cards */
+.rich-text.compact,
+.menu-inclusions-content {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.rich-text.compact p,
+.menu-inclusions-content p {
+  margin-bottom: 4px;
+}
+
+.rich-text.compact ul,
+.menu-inclusions-content ul {
+  list-style-type: disc;
+  padding-left: 18px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+.rich-text.compact ol,
+.menu-inclusions-content ol {
+  list-style-type: decimal;
+  padding-left: 18px;
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+
+.rich-text.compact li,
+.menu-inclusions-content li {
+  margin-bottom: 2px;
+}
+
+.rich-text.compact strong,
+.rich-text.compact b,
+.menu-inclusions-content strong,
+.menu-inclusions-content b {
+  color: #fff;
+  font-weight: 600;
+}
+

@@ -54,13 +54,25 @@ export async function POST(req: Request) {
         if (addonService && addonService.isActive) {
           let cost = 0;
           if (addonService.pricingOptions) {
-            const res = calculateServicePrice(addonService.pricingOptions as any, adults, children, addon.selectedOptions);
+            const res = calculateServicePrice(
+              addonService.pricingOptions as any,
+              adults,
+              children,
+              addon.selectedOptions,
+              undefined,
+              addon.selectedMenus
+            );
             cost = res.valid ? res.totalPrice : 0;
           } else {
             cost = addonService.pricingModel === "PER_PERSON" ? addonService.basePrice * (adults + children) : addonService.basePrice;
           }
           addOnRevenue += cost;
-          addOnRecords.push({ serviceId: addonService.id, quantity: 1, totalPrice: cost });
+          addOnRecords.push({
+            serviceId: addonService.id,
+            quantity: 1,
+            totalPrice: cost,
+            specialRequests: addon.menuSummary || (addon.selectedMenus ? JSON.stringify(addon.selectedMenus) : null),
+          });
         }
       }
     }

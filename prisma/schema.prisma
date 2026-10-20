@@ -273,6 +273,7 @@ enum SafariPackageType {
   AFTERNOON
   FULL_DAY
   PRIVATE
+  ALL
 }
 
 enum PricingType {
@@ -379,14 +380,16 @@ model Notification {
 }
 
 model EntranceTicket {
-  id         String   @id @default(cuid())
-  name       String   // e.g. "Block 1 (Palatupana) - Half-day"
+  id         String            @id @default(cuid())
+  name       String            // e.g. "Block 1 (Palatupana) - Half-day"
   type       SafariPackageType @default(MORNING)
-  adultPrice Float    // Price per adult
-  childPrice Float    // Price per child (under 13)
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  category   String            @default("FOREIGN") // "FOREIGN" | "LOCAL"
+  adultPrice Float             @default(0) // Price per adult (or per person for locals)
+  childPrice Float             @default(0) // Price per child (under 13)
+  fixedPrice Float?            @default(0) // Fixed payment per safari (for locals)
+  isActive   Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
 
   safariBookings SafariBooking[]
 }

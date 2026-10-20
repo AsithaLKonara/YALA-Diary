@@ -24,9 +24,9 @@ export async function POST(request: Request) {
     if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await request.json();
-    const { name, type, adultPrice, childPrice, isActive } = body;
+    const { name, type, category = "FOREIGN", adultPrice, childPrice, fixedPrice, isActive } = body;
 
-    if (!name || !type || adultPrice === undefined || childPrice === undefined) {
+    if (!name || !type) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -34,8 +34,10 @@ export async function POST(request: Request) {
       data: {
         name,
         type,
-        adultPrice: Number(adultPrice),
-        childPrice: Number(childPrice),
+        category,
+        adultPrice: adultPrice !== undefined ? Number(adultPrice) : 0,
+        childPrice: childPrice !== undefined ? Number(childPrice) : 0,
+        fixedPrice: fixedPrice !== undefined ? Number(fixedPrice) : 0,
         isActive: isActive !== undefined ? isActive : true,
       }
     });

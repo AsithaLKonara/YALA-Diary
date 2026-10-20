@@ -53,6 +53,7 @@ interface FullBooking {
     id: string;
     quantity: number;
     totalPrice: number;
+    specialRequests?: string | null;
     service: {
       name: string;
       category: string;
@@ -288,8 +289,15 @@ export default function BookingSidePanel({ bookingId, onClose, onStatusChange }:
                   {booking.serviceBookings.map(sb => (
                     <div key={sb.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--dash-border)", fontSize: "0.9rem" }}>
                       <div>
-                        <span>{sb.service.name}</span>
-                        <span style={{ marginLeft: 8, fontSize: "0.75rem", color: "var(--dash-muted)" }}>{sb.service.category}</span>
+                        <div>
+                          <span>{sb.service.name}</span>
+                          <span style={{ marginLeft: 8, fontSize: "0.75rem", color: "var(--dash-muted)" }}>{sb.service.category}</span>
+                        </div>
+                        {sb.specialRequests && (
+                          <div style={{ fontSize: "0.78rem", color: "var(--primary)", marginTop: 2 }}>
+                            {sb.specialRequests}
+                          </div>
+                        )}
                       </div>
                       <span style={{ fontWeight: 600 }}>${sb.totalPrice}</span>
                     </div>

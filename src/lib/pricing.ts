@@ -149,7 +149,15 @@ export type ServicePricingStrategy =
   | "FLAT"
   | "PER_PERSON"
   | "PER_KM"
-  | "TIERED_OPTIONS";
+  | "TIERED_OPTIONS"
+  | "MENU_OPTIONS";
+
+export interface MenuItemOption {
+  id: string;
+  name: string;
+  description?: string;
+  price: number;
+}
 
 export interface PricingDimension {
   label: string; // e.g. "Pickup Location"
@@ -176,12 +184,17 @@ export interface ServicePricingOptions {
   // TIERED_OPTIONS
   dimensions?: PricingDimension[];
   tiers?: ServicePricingTier[];
+  // MENU_OPTIONS (Food & Beverage)
+  menus?: MenuItemOption[];
+  minGuests?: number | null;
+  maxCapacity?: number | null;
 }
 
 export interface ServicePriceBreakdown {
   totalPrice: number;
   lines: { label: string; amount: number }[];
   selectedOptions?: Record<string, string>;
+  selectedMenus?: Record<string, number>;
   valid: boolean;
   validationError?: string;
 }
@@ -191,9 +204,45 @@ export function calculateServicePrice(
   adults: number,
   children: number,
   selectedOptions?: Record<string, string>,
-  distanceKm?: number
+  distanceKm?: number,
+  selectedMenus?: Record<string, number>
 ): ServicePriceBreakdown {
   const lines: { label: string; amount: number }[] = [];
+
+  // MENU_OPTIONS (Food & Beverage multi-menu selection)
+  if (options.strategyType === "MENU_OPTIONS" || (options.menus && options.menus.length > 0 && selectedMenus && Object.keys(selectedMenus).length > 0)) {
+    const menus = options.menus ?? [];
+    let totalPrice = 0;
+    let totalCount = 0;
+
+    if (selectedMenus) {
+      for (const [menuId, count] of Object.entries(selectedMenus)) {
+        if (count > 0) {
+          const menu = menus.find((m) => m.id === menuId);
+          if (menu) {
+            const menuCost = menu.price * count;
+            totalPrice += menuCost;
+            totalCount += count;
+            lines.push({
+              label: `${menu.name} (${count} × $${menu.price.toFixed(2)})`,
+              amount: menuCost,
+            });
+          }
+        }
+      }
+    }
+
+    if (totalCount === 0 && options.strategyType === "MENU_OPTIONS") {
+      return {
+        totalPrice: 0,
+        lines: [],
+        valid: false,
+        validationError: "Please select at least one menu option.",
+      };
+    }
+
+    return { totalPrice, lines, selectedMenus, valid: true };
+  }
 
   if (options.strategyType === "FLAT") {
     const price = options.flatPrice ?? 0;

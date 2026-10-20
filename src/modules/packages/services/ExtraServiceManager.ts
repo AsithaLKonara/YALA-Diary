@@ -35,6 +35,7 @@ export class ExtraServiceManager {
     basePrice: number;
     perKmRate?: number;
     images?: string[];
+    pricingOptions?: any;
   }): Promise<ExtraService> {
     return prisma.extraService.create({
       data: {
@@ -59,6 +60,7 @@ export class ExtraServiceManager {
       perKmRate: number;
       images: string[];
       isActive: boolean;
+      pricingOptions: any;
     }>
   ): Promise<ExtraService> {
     const updateData = { ...data };

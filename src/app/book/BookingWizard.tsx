@@ -56,6 +56,8 @@ interface BookingData {
   entranceTicketBlock?: string;
   entranceTicketDuration?: string;
   entranceTicketPrice?: number;
+  entranceTicketCategory?: "FOREIGN" | "LOCAL";
+  entranceTicketLkrPrice?: number;
 }
 
 export default function BookingWizard() {
@@ -628,152 +630,168 @@ function Step3({ data, updateData, next, back }: any) {
                   gap: '20px'
                 }}>
                   {addons.map((a: any) => {
-            const isSelected = !!data.addons.find((ad: any) => ad.id === a.id);
-            const image = a.images?.[0] || null;
-            
-            // Calculate live price
-            const opts = a.pricingOptions as ServicePricingOptions | null;
-            let displayPrice = 0;
-            let pricingLabel = "";
-            let isValid = true;
-            
-            if (opts) {
-              const breakdown = calculateServicePrice(opts, data.adults, data.children, addonSelections[a.id]);
-              displayPrice = breakdown.totalPrice;
-              isValid = breakdown.valid;
-              if (opts.strategyType === "PER_PERSON") pricingLabel = "total (per person rates)";
-              else if (opts.strategyType === "PER_KM") pricingLabel = "+ per km";
-              else if (opts.strategyType === "TIERED_OPTIONS") pricingLabel = "total";
-              else pricingLabel = "flat rate";
-            } else {
-              // Legacy
-              displayPrice = a.pricingModel === "PER_PERSON" ? a.basePrice * (data.adults + data.children) : a.basePrice;
-              pricingLabel = a.pricingModel === "PER_PERSON" ? "total" : "flat rate";
-            }
+                    const selectedAddonItem = data.addons.find((ad: any) => ad.id === a.id);
+                    const isSelected = !!selectedAddonItem;
+                    const image = a.images?.[0] || null;
+                    
+                    const opts = a.pricingOptions as ServicePricingOptions | null;
+                    const menus = opts?.menus || [];
+                    const isMenuPackage = opts?.strategyType === "MENU_OPTIONS" || menus.length > 0;
 
-            const hasDimensions = opts?.strategyType === "TIERED_OPTIONS" && opts.dimensions && opts.dimensions.length > 0;
+                    let displayPrice = 0;
+                    let pricingLabel = "";
+                    let isValid = true;
+                    
+                    if (isMenuPackage) {
+                      if (isSelected && selectedAddonItem?.calculatedPrice !== undefined) {
+                        displayPrice = selectedAddonItem.calculatedPrice;
+                        pricingLabel = selectedAddonItem.menuSummary ? selectedAddonItem.menuSummary : "total";
+                      } else {
+                        const minPrice = menus.length > 0 ? Math.min(...menus.map((m: any) => m.price)) : (a.basePrice || 0);
+                        displayPrice = minPrice;
+                        pricingLabel = "from / portion";
+                      }
+                    } else if (opts) {
+                      const breakdown = calculateServicePrice(opts, data.adults, data.children, addonSelections[a.id]);
+                      displayPrice = isSelected && selectedAddonItem?.calculatedPrice !== undefined ? selectedAddonItem.calculatedPrice : breakdown.totalPrice;
+                      isValid = breakdown.valid;
+                      if (opts.strategyType === "PER_PERSON") pricingLabel = "total (per person rates)";
+                      else if (opts.strategyType === "PER_KM") pricingLabel = "+ per km";
+                      else if (opts.strategyType === "TIERED_OPTIONS") pricingLabel = "total";
+                      else pricingLabel = "flat rate";
+                    } else {
+                      // Legacy
+                      displayPrice = a.pricingModel === "PER_PERSON" ? a.basePrice * (data.adults + data.children) : a.basePrice;
+                      pricingLabel = a.pricingModel === "PER_PERSON" ? "total" : "flat rate";
+                    }
 
-            return (
-              <div
-                key={a.id}
-                style={{
-                  borderRadius: 16,
-                  border: `2px solid ${isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}`,
-                  background: isSelected ? 'rgba(154,205,50,0.06)' : 'rgba(0,0,0,0.25)',
-                  overflow: 'hidden',
-                  transition: 'all 0.25s ease',
-                  position: 'relative',
-                  boxShadow: isSelected ? '0 0 0 1px rgba(154,205,50,0.3), 0 8px 24px rgba(154,205,50,0.1)' : 'none',
-                  display: 'flex', flexDirection: 'column'
-                }}
-              >
-                {/* Image Area - clickable to toggle */}
-                <div 
-                  onClick={() => toggleAddon(a, isValid)}
-                  style={{ position: 'relative', height: 160, background: '#111', overflow: 'hidden', cursor: isValid ? 'pointer' : 'not-allowed' }}>
-                  {image ? (
-                    <Image src={image} alt={a.name} fill style={{ objectFit: 'cover', opacity: isSelected ? 0.8 : 0.55, transition: 'opacity 0.25s' }} />
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '2.5rem', opacity: 0.3 }}>✦</div>
-                  )}
-                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)' }} />
-                  
-                  <div style={{
-                    position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
-                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '3px 10px',
-                    fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)', letterSpacing: '0.05em', textTransform: 'uppercase'
-                  }}>{a.category}</div>
-                  
-                  <div style={{
-                    position: 'absolute', top: 10, right: 10, width: 26, height: 26, borderRadius: 6,
-                    border: `2px solid ${isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.3)'}`,
-                    background: isSelected ? 'var(--primary)' : 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'all 0.2s'
-                  }}>
-                    {isSelected && <Check size={14} color="#000" strokeWidth={3} />}
-                  </div>
-                </div>
-
-                {/* Content Area */}
-                <div style={{ padding: '16px 18px 18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <div onClick={() => toggleAddon(a, isValid)} style={{ cursor: isValid ? 'pointer' : 'not-allowed', flex: 1 }}>
-                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6, color: '#fff' }}>{a.name}</h4>
-                    {a.description && (
-                      <div style={{
-                        fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, marginBottom: 14,
-                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                        wordBreak: 'break-word', overflowWrap: 'anywhere'
-                      }} dangerouslySetInnerHTML={{ __html: cleanRichText(a.description) }} />
-                    )}
-                  </div>
-
-                  {/* Dimension Selectors (if any) */}
-                  {hasDimensions && (
-                    <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {opts!.dimensions!.map(dim => (
-                        <div key={dim.key}>
-                          <label style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.5)', display: 'block', marginBottom: 4 }}>{dim.label}</label>
-                          <select 
-                            style={{ 
-                              width: '100%', padding: '6px 10px', borderRadius: 6, 
-                              background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)', 
-                              color: '#fff', fontSize: '0.85rem', outline: 'none' 
-                            }}
-                            value={addonSelections[a.id]?.[dim.key] || ""}
-                            onChange={(e) => handleOptionChange(a.id, dim.key, e.target.value)}
-                          >
-                            {dim.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                          </select>
+                    return (
+                      <div
+                        key={a.id}
+                        style={{
+                          borderRadius: 16,
+                          border: `2px solid ${isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.08)'}`,
+                          background: isSelected ? 'rgba(154,205,50,0.06)' : 'rgba(0,0,0,0.25)',
+                          overflow: 'hidden',
+                          transition: 'all 0.25s ease',
+                          position: 'relative',
+                          boxShadow: isSelected ? '0 0 0 1px rgba(154,205,50,0.3), 0 8px 24px rgba(154,205,50,0.1)' : 'none',
+                          display: 'flex', flexDirection: 'column'
+                        }}
+                      >
+                        {/* Image Area - opens details popup */}
+                        <div 
+                          onClick={() => setSelectedServiceModal(a)}
+                          style={{ position: 'relative', height: 160, background: '#111', overflow: 'hidden', cursor: 'pointer' }}>
+                          {image ? (
+                            <Image src={image} alt={a.name} fill style={{ objectFit: 'cover', opacity: isSelected ? 0.85 : 0.6, transition: 'opacity 0.25s' }} />
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '2.5rem', opacity: 0.3 }}>✦</div>
+                          )}
+                          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%)' }} />
+                          
+                          <div style={{
+                            position: 'absolute', top: 10, left: 10, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
+                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '3px 10px',
+                            fontSize: '0.7rem', color: 'rgba(255,255,255,0.8)', letterSpacing: '0.05em', textTransform: 'uppercase'
+                          }}>{a.category}</div>
+                          
+                          {isSelected && (
+                            <div style={{
+                              position: 'absolute', top: 10, right: 10, width: 26, height: 26, borderRadius: 6,
+                              border: '2px solid var(--primary)', background: 'var(--primary)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+                            }}>
+                              <Check size={14} color="#000" strokeWidth={3} />
+                            </div>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  )}
 
-                  {/* Price & Add Button */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto' }}>
-                    <div onClick={() => toggleAddon(a, isValid)} style={{ cursor: isValid ? 'pointer' : 'not-allowed' }}>
-                      {isValid ? (
-                        <>
-                          <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>
-                            {formatPrice(displayPrice)}
-                          </span>
-                          <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 4 }}>
-                            / {pricingLabel}
-                          </span>
-                        </>
-                      ) : (
-                        <span style={{ fontSize: '0.85rem', color: 'var(--dash-danger)' }}>Select options to view price</span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setSelectedServiceModal(a); }}
-                        style={{
-                          fontSize: '0.78rem', fontWeight: 600, padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
-                          background: 'rgba(255,255,255,0.05)',
-                          color: 'rgba(255,255,255,0.8)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          transition: 'all 0.2s'
-                        }}>
-                        Details
-                      </button>
-                      <button 
-                        onClick={() => toggleAddon(a, isValid)}
-                        disabled={!isValid}
-                        style={{
-                          fontSize: '0.78rem', fontWeight: 600, padding: '5px 12px', borderRadius: 20, cursor: isValid ? 'pointer' : 'not-allowed',
-                          background: isSelected ? 'rgba(154,205,50,0.15)' : 'rgba(255,255,255,0.05)',
-                          color: isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.5)',
-                          border: `1px solid ${isSelected ? 'rgba(154,205,50,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                          transition: 'all 0.2s', opacity: isValid ? 1 : 0.5
-                        }}>
-                        {isSelected ? '✓ Added' : '+ Add'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
+                        {/* Content Area */}
+                        <div style={{ padding: '16px 18px 18px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                          <div onClick={() => setSelectedServiceModal(a)} style={{ cursor: 'pointer', flex: 1 }}>
+                            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: 6, color: '#fff' }}>{a.name}</h4>
+                            {a.description && (
+                              <div style={{
+                                fontSize: '0.82rem', color: 'rgba(255,255,255,0.55)', lineHeight: 1.55, marginBottom: 12,
+                                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                                wordBreak: 'break-word', overflowWrap: 'anywhere'
+                              }} dangerouslySetInnerHTML={{ __html: cleanRichText(a.description) }} />
+                            )}
+                          </div>
+
+                          {/* Selected Summary Pill (if selected) */}
+                          {isSelected && selectedAddonItem?.menuSummary && (
+                            <div style={{
+                              marginBottom: 12, padding: '6px 10px', borderRadius: 8,
+                              background: 'rgba(154,205,50,0.1)', border: '1px solid rgba(154,205,50,0.25)',
+                              fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600,
+                              display: 'flex', alignItems: 'center', gap: 6
+                            }}>
+                              <span>✓ {selectedAddonItem.menuSummary}</span>
+                            </div>
+                          )}
+
+                          {/* Price & Selection Button */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto', paddingTop: 8 }}>
+                            <div onClick={() => setSelectedServiceModal(a)} style={{ cursor: 'pointer' }}>
+                              <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--primary)' }}>
+                                {formatPrice(displayPrice)}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 4 }}>
+                                / {pricingLabel}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                              {isSelected ? (
+                                <>
+                                  <button 
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setSelectedServiceModal(a); }}
+                                    style={{
+                                      fontSize: '0.78rem', fontWeight: 600, padding: '5px 12px', borderRadius: 20, cursor: 'pointer',
+                                      background: 'rgba(154,205,50,0.15)',
+                                      color: 'var(--primary)',
+                                      border: '1px solid rgba(154,205,50,0.3)',
+                                      transition: 'all 0.2s'
+                                    }}>
+                                    Edit
+                                  </button>
+                                  <button 
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); updateData({ addons: data.addons.filter((ad: any) => ad.id !== a.id) }); }}
+                                    style={{
+                                      fontSize: '0.78rem', fontWeight: 600, padding: '5px 10px', borderRadius: 20, cursor: 'pointer',
+                                      background: 'rgba(239, 68, 68, 0.1)',
+                                      color: '#ef4444',
+                                      border: '1px solid rgba(239, 68, 68, 0.25)',
+                                      transition: 'all 0.2s'
+                                    }}>
+                                    ✕
+                                  </button>
+                                </>
+                              ) : (
+                                <button 
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); setSelectedServiceModal(a); }}
+                                  style={{
+                                    fontSize: '0.82rem', fontWeight: 700, padding: '6px 16px', borderRadius: 20, cursor: 'pointer',
+                                    background: 'var(--primary)',
+                                    color: '#000',
+                                    border: 'none',
+                                    boxShadow: '0 2px 8px rgba(154,205,50,0.25)',
+                                    transition: 'all 0.2s'
+                                  }}>
+                                  Select
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
                   })}
                 </div>
               </div>
@@ -784,16 +802,32 @@ function Step3({ data, updateData, next, back }: any) {
 
       {selectedServiceModal && (
         <ExtraServiceModal 
-          service={selectedServiceModal} 
+          service={selectedServiceModal}
+          totalGuests={(data.adults || 0) + (data.children || 0)}
+          initialMenuSelections={data.addons.find((ad: any) => ad.id === selectedServiceModal.id)?.selectedMenus}
+          initialDimensionSelections={data.addons.find((ad: any) => ad.id === selectedServiceModal.id)?.selectedOptions || addonSelections[selectedServiceModal.id]}
+          isSelected={data.addons.some((add: any) => add.id === selectedServiceModal.id)}
           onClose={() => setSelectedServiceModal(null)} 
-          onSelect={() => {
-            const isSelected = data.addons.some((add: any) => add.id === selectedServiceModal.id);
-            if (!isSelected) {
-              const opts = selectedServiceModal.pricingOptions as ServicePricingOptions | null;
-              const isValid = !opts?.dimensions || opts.dimensions.every((d: any) => addonSelections[selectedServiceModal.id]?.[d.key]);
-              toggleAddon(selectedServiceModal, isValid);
+          onConfirm={(payload) => {
+            const existingIdx = data.addons.findIndex((add: any) => add.id === selectedServiceModal.id);
+            const updatedAddon = {
+              ...selectedServiceModal,
+              selectedMenus: payload.selectedMenus,
+              selectedOptions: payload.selectedOptions,
+              calculatedPrice: payload.totalPrice,
+              menuSummary: payload.summaryText,
+            };
+            if (existingIdx >= 0) {
+              const updatedList = [...data.addons];
+              updatedList[existingIdx] = updatedAddon;
+              updateData({ addons: updatedList });
+            } else {
+              updateData({ addons: [...data.addons, updatedAddon] });
             }
-          }} 
+          }}
+          onRemove={() => {
+            updateData({ addons: data.addons.filter((add: any) => add.id !== selectedServiceModal.id) });
+          }}
         />
       )}
 
@@ -848,13 +882,28 @@ function Step4({ data, updateData, back, next }: any) {
   const handleSelectTicket = (ticketId: string) => {
     const tkt = tickets.find(t => t.id === ticketId);
     if (tkt) {
-      const price = (tkt.adultPrice * data.adults) + (tkt.childPrice * data.children);
+      let price = 0;
+      let lkrPrice: number | undefined = undefined;
+      const totalGuests = (data.adults || 0) + (data.children || 0);
+
+      if (tkt.category === "LOCAL") {
+        const lkrTotal = (tkt.fixedPrice || 0) + (tkt.adultPrice * totalGuests);
+        lkrPrice = lkrTotal;
+        price = Number((lkrTotal / (RATES.LKR || 310)).toFixed(2));
+      } else {
+        price = (tkt.adultPrice * data.adults) + (tkt.childPrice * data.children);
+      }
+
       updateData({
         entranceTicketId: ticketId,
-        entranceTicketPrice: price
+        entranceTicketPrice: price,
+        entranceTicketCategory: (tkt.category as "FOREIGN" | "LOCAL") || "FOREIGN",
+        entranceTicketLkrPrice: lkrPrice
       });
     }
   };
+
+  const availableTickets = tickets.filter(t => !data.safariPackage || t.type === data.safariPackage.type || t.type === "ALL");
 
   return (
     <div className="booking-panel booking-sidebar-layout">
@@ -936,42 +985,80 @@ function Step4({ data, updateData, back, next }: any) {
               <div style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                 {loadingTickets ? (
                   <p style={{ color: 'var(--dash-muted)' }}>Loading available tickets...</p>
-                ) : tickets.filter(t => !data.safariPackage || t.type === data.safariPackage.type).length === 0 ? (
+                ) : availableTickets.length === 0 ? (
                   <p style={{ color: 'var(--dash-muted)' }}>No tickets available for this safari time range right now.</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', marginBottom: 5 }}>Select your ticket block:</p>
-                    {tickets.filter(t => !data.safariPackage || t.type === data.safariPackage.type).map(tkt => (
-                      <div 
-                        key={tkt.id}
-                        onClick={(e) => { e.stopPropagation(); handleSelectTicket(tkt.id); }}
-                        style={{
-                          padding: 15,
-                          border: `1px solid ${data.entranceTicketId === tkt.id ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`,
-                          borderRadius: 6,
-                          background: data.entranceTicketId === tkt.id ? 'rgba(154,205,50,0.2)' : 'rgba(0,0,0,0.2)',
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                          <input 
-                            type="radio" 
-                            checked={data.entranceTicketId === tkt.id} 
-                            readOnly 
-                            style={{ accentColor: 'var(--primary)', width: 18, height: 18, cursor: 'pointer' }} 
-                          />
-                          <div>
-                            <div style={{ fontWeight: 500 }}>{tkt.name}</div>
-                            <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)' }}>
-                              Adult: $ {tkt.adultPrice} × {data.adults} | Child: $ {tkt.childPrice} × {data.children}
+                    {availableTickets.map(tkt => {
+                      const isLocal = tkt.category === "LOCAL";
+                      const totalGuests = (data.adults || 0) + (data.children || 0);
+                      const lkrTotal = isLocal ? (tkt.fixedPrice || 0) + (tkt.adultPrice * totalGuests) : 0;
+                      const calculatedTicketPrice = isLocal
+                        ? Number((lkrTotal / (RATES.LKR || 310)).toFixed(2))
+                        : (tkt.adultPrice * data.adults) + (tkt.childPrice * data.children);
+
+                      return (
+                        <div 
+                          key={tkt.id}
+                          onClick={(e) => { e.stopPropagation(); handleSelectTicket(tkt.id); }}
+                          style={{
+                            padding: 15,
+                            border: `1px solid ${data.entranceTicketId === tkt.id ? 'var(--primary)' : 'rgba(255,255,255,0.1)'}`,
+                            borderRadius: 8,
+                            background: data.entranceTicketId === tkt.id ? 'rgba(154,205,50,0.15)' : 'rgba(0,0,0,0.2)',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                            <input 
+                              type="radio" 
+                              checked={data.entranceTicketId === tkt.id} 
+                              readOnly 
+                              style={{ accentColor: 'var(--primary)', width: 18, height: 18, cursor: 'pointer' }} 
+                            />
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontWeight: 600, color: '#fff' }}>{tkt.name}</span>
+                                <span style={{
+                                  fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4, fontWeight: 600,
+                                  background: isLocal ? 'rgba(234, 179, 8, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                                  color: isLocal ? '#facc15' : '#38bdf8'
+                                }}>
+                                  {isLocal ? "Local (LKR)" : "Foreign (USD)"}
+                                </span>
+                                {tkt.type === "ALL" && (
+                                  <span style={{
+                                    fontSize: '0.68rem', padding: '1px 6px', borderRadius: 4,
+                                    background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)'
+                                  }}>
+                                    All Safaris
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>
+                                {isLocal ? (
+                                  `Fixed: LKR ${(tkt.fixedPrice || 0).toLocaleString()} + LKR ${tkt.adultPrice.toLocaleString()} × ${totalGuests} pax`
+                                ) : (
+                                  `Adult: $${tkt.adultPrice} × ${data.adults} | Child: $${tkt.childPrice} × ${data.children}`
+                                )}
+                              </div>
                             </div>
                           </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1.05rem' }}>
+                              {isLocal ? `LKR ${lkrTotal.toLocaleString()}` : `$ ${calculatedTicketPrice.toFixed(2)}`}
+                            </div>
+                            {isLocal && (
+                              <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                                ≈ ${calculatedTicketPrice.toFixed(2)} USD
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div style={{ fontWeight: 600, color: 'var(--primary)' }}>
-                          $ {((tkt.adultPrice * data.adults) + (tkt.childPrice * data.children)).toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1020,11 +1107,11 @@ function Step5({ data, updateData, back, next }: any) {
   const addonBreakdowns = data.addons.map((a: any) => {
     const opts = a.pricingOptions as ServicePricingOptions | null;
     if (!opts) {
-      const price = a.pricingModel === "PER_PERSON" ? (a.basePrice * (data.adults + data.children)) : a.basePrice;
+      const price = a.calculatedPrice ?? (a.pricingModel === "PER_PERSON" ? (a.basePrice * (data.adults + data.children)) : a.basePrice);
       return { addon: a, totalPrice: price, lines: [{ label: a.name, amount: price }], valid: true };
     }
-    const breakdown = calculateServicePrice(opts, data.adults, data.children, a.selectedOptions);
-    return { addon: a, ...breakdown };
+    const breakdown = calculateServicePrice(opts, data.adults, data.children, a.selectedOptions, undefined, a.selectedMenus);
+    return { addon: a, ...breakdown, totalPrice: a.calculatedPrice !== undefined ? a.calculatedPrice : breakdown.totalPrice };
   });
 
   const addonsTotal = addonBreakdowns.reduce((sum: number, b: any) => sum + (b.valid ? b.totalPrice : 0), 0);
@@ -1050,6 +1137,8 @@ function Step5({ data, updateData, back, next }: any) {
           pricingModel: a.pricingModel,
           basePrice: a.basePrice,
           selectedOptions: a.selectedOptions,
+          selectedMenus: a.selectedMenus,
+          menuSummary: a.menuSummary,
         })),
         guest: data.guest,
         userId,
@@ -1156,7 +1245,13 @@ function Step5({ data, updateData, back, next }: any) {
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#ddd', fontWeight: 500, marginBottom: 4 }}>
               <span>Park Entrance Ticket ({data.entranceTicketType === "COMPANY_PROVIDED" ? 'Company Provided' : 'Self Arranged'})</span>
-              <span>{data.entranceTicketType === "COMPANY_PROVIDED" ? formatPrice(data.entranceTicketPrice || 0) : '—'}</span>
+              <span>
+                {data.entranceTicketType === "COMPANY_PROVIDED" 
+                  ? (data.entranceTicketCategory === "LOCAL" && data.entranceTicketLkrPrice
+                      ? `LKR ${data.entranceTicketLkrPrice.toLocaleString()} (${formatPrice(data.entranceTicketPrice || 0)})`
+                      : formatPrice(data.entranceTicketPrice || 0))
+                  : '—'}
+              </span>
             </div>
           </div>
         )}
