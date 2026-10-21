@@ -13,6 +13,7 @@ import CustomDatePicker from "@/components/ui/CustomDatePicker";
 import PackageDetailsModal from "./PackageDetailsModal";
 import ExtraServiceModal from "./ExtraServiceModal";
 import { cleanRichText } from "@/lib/sanitizeHtml";
+import { trackBeginCheckout } from "@/lib/gtag";
 
 interface ExtraService {
   id: string;
@@ -1088,7 +1089,7 @@ function Step4({ data, updateData, back, next }: any) {
 // -----------------------------------------------------------------------------
 // --- Step 5: Checkout (formerly Step4) ---
 function Step5({ data, updateData, back, next }: any) {
-  const { formatPrice } = useCurrency();
+  const { formatPrice, currency } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { data: session } = useSession();
@@ -1165,6 +1166,13 @@ function Step5({ data, updateData, back, next }: any) {
           fixedServiceTax
         },
       };
+
+      trackBeginCheckout({
+        value: total,
+        currency: currency || "USD",
+        packageName: data.package?.name || data.safariPackage?.name,
+      });
+
       const res = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to create booking");
