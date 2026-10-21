@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Providers from "@/components/Providers";
 import { siteConfig } from "@/lib/seo/config";
 import JsonLd from "@/components/seo/JsonLd";
+import GoogleTag from "@/components/analytics/GoogleTag";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -84,6 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <JsonLd data={webSiteJsonLd} />
       </head>
       <body>
+        <GoogleTag />
         <Providers>
           <CursorGlow />
           <Navbar />
