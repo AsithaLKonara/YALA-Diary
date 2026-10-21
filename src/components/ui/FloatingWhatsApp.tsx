@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { trackWhatsAppClick } from '@/lib/gtag';
 
 export default function FloatingWhatsApp() {
   const phoneNumber = "94727176663"; // +94 72 717 6663 formatted for wa.me link
@@ -13,6 +14,7 @@ export default function FloatingWhatsApp() {
       rel="noopener noreferrer"
       className="floating-whatsapp"
       aria-label="Chat with us on WhatsApp"
+      onClick={() => trackWhatsAppClick("floating_button")}
       style={{
         position: 'fixed',
         bottom: '30px',
