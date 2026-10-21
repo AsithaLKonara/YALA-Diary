@@ -875,7 +875,9 @@ function Step4({ data, updateData, back, next }: any) {
     updateData({ 
       entranceTicketType: option,
       entranceTicketId: undefined, 
-      entranceTicketPrice: undefined
+      entranceTicketPrice: undefined,
+      entranceTicketCategory: undefined,
+      entranceTicketLkrPrice: undefined
     });
   };
 
@@ -1116,7 +1118,9 @@ function Step5({ data, updateData, back, next }: any) {
 
   const addonsTotal = addonBreakdowns.reduce((sum: number, b: any) => sum + (b.valid ? b.totalPrice : 0), 0);
   const ticketTotal = data.entranceTicketType === "COMPANY_PROVIDED" ? (data.entranceTicketPrice || 0) : 0;
-  const governmentTax = (ticketTotal * 0.18) + 10;
+  const isLocalTicket = data.entranceTicketType === "COMPANY_PROVIDED" && data.entranceTicketCategory === "LOCAL";
+  const fixedServiceTax = isLocalTicket ? 0 : 10;
+  const governmentTax = (ticketTotal * 0.18) + fixedServiceTax;
   const total = (safariPriceInfo.valid ? safariPriceInfo.totalPrice : 0) + addonsTotal + ticketTotal + governmentTax;
 
   const handleSubmit = async () => {
@@ -1147,14 +1151,18 @@ function Step5({ data, updateData, back, next }: any) {
         entranceTicketType: data.entranceTicketType,
         entranceTicketId: data.entranceTicketId,
         entranceTicketPrice: data.entranceTicketPrice,
+        entranceTicketCategory: data.entranceTicketCategory,
         pricingSnapshot: {
           safari: safariPriceInfo,
           addons: addonBreakdowns.map((b: any) => ({ id: b.addon.id, name: b.addon.name, price: b.totalPrice, lines: b.lines })),
           ticket: {
             type: data.entranceTicketType,
             id: data.entranceTicketId,
-            price: data.entranceTicketPrice
-          }
+            price: data.entranceTicketPrice,
+            category: data.entranceTicketCategory
+          },
+          governmentTax,
+          fixedServiceTax
         },
       };
       const res = await fetch("/api/bookings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -1289,7 +1297,7 @@ function Step5({ data, updateData, back, next }: any) {
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span>Fixed Service Tax</span>
-              <span>$10.00</span>
+              <span>{formatPrice(fixedServiceTax)}</span>
             </div>
           </div>
         </div>

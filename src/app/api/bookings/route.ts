@@ -12,7 +12,8 @@ export async function POST(req: Request) {
       isSafariOnly, safariPackageId, 
       hotelId, checkIn, checkOut, adults, children, roomTypeId, ratePlanId, 
       addons, guest, userId, price, pricingSnapshot,
-      entranceTicketType, entranceTicketBlock, entranceTicketDuration, entranceTicketPrice
+      entranceTicketType, entranceTicketBlock, entranceTicketDuration, entranceTicketPrice,
+      entranceTicketCategory, entranceTicketId
     } = data;
 
     adults = parseInt(adults as any) || 1;
@@ -93,7 +94,25 @@ export async function POST(req: Request) {
         calculatedSafariPrice = pkg.pricingType === "PER_PERSON" ? pkg.basePrice * (adults + children) : pkg.basePrice;
       }
       const ticketRevenue = (entranceTicketType === 'COMPANY_PROVIDED' && entranceTicketPrice) ? entranceTicketPrice : 0;
-      const governmentTax = (ticketRevenue * 0.18) + 10;
+      
+      let fixedServiceTax = 10;
+      if (entranceTicketType === 'COMPANY_PROVIDED') {
+        const tktId = entranceTicketId || data.entranceTicketId;
+        const cat = entranceTicketCategory || data.entranceTicketCategory;
+        if (cat === 'LOCAL') {
+          fixedServiceTax = 0;
+        } else if (tktId) {
+          const tkt = await prisma.entranceTicket.findUnique({
+            where: { id: tktId },
+            select: { category: true }
+          });
+          if (tkt?.category === 'LOCAL') {
+            fixedServiceTax = 0;
+          }
+        }
+      }
+
+      const governmentTax = (ticketRevenue * 0.18) + fixedServiceTax;
       const totalRev = calculatedSafariPrice + addOnRevenue + ticketRevenue + governmentTax;
       const finalAddOnRevenue = addOnRevenue + ticketRevenue + governmentTax;
       productName = `Safari Package - ${pkg.name}`;
