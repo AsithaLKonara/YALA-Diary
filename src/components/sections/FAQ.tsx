@@ -17,7 +17,7 @@ export default function FAQ() {
   const [openIdx, setOpenIdx] = useState<number | null>(null);
 
   return (
-    <section className="faq-section section-padding">
+    <section id="faq" className="faq-section section-padding">
       <div className="faq-container">
         <h2 className="section-title">Frequently Asked Questions</h2>
         <div className="faq-list">

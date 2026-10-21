@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 export default function WhyYala() {
   return (
     <>
-      <section className="why-yala section-padding" style={{ overflow: 'hidden', paddingTop: '40px', paddingBottom: '0' }}>
+      <section id="about" className="why-yala section-padding" style={{ overflow: 'hidden', paddingTop: '40px', paddingBottom: '0' }}>
         {/* Section 1: Image Left, Text Right */}
         <div className="why-yala-grid" style={{ alignItems: 'center' }}>
           <motion.div

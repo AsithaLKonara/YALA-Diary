@@ -13,7 +13,7 @@ const IMAGES = [
 
 export default function Gallery() {
   return (
-    <section className="gallery-section section-padding">
+    <section id="gallery" className="gallery-section section-padding">
       <div className="gallery-header">
         <h2 className="section-title">Yala Stories</h2>
         <a href="#" className="gallery-link">Follow the Wild →</a>

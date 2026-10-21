@@ -3,7 +3,7 @@
 import React from 'react';
 
 export default function FloatingWhatsApp() {
-  const phoneNumber = "61431534377"; // +61 431 534 377 formatted for wa.me link
+  const phoneNumber = "94727176663"; // +94 72 717 6663 formatted for wa.me link
   const whatsappUrl = `https://wa.me/${phoneNumber}`;
 
   return (

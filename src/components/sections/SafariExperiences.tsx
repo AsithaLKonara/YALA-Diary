@@ -34,7 +34,7 @@ export default function SafariExperiences({ packages }: { packages?: any[] }) {
   }
 
   return (
-    <section className="experiences-section section-padding">
+    <section id="safari-experiences" className="experiences-section section-padding">
       <div className="experiences-header" style={!isScrollable ? { textAlign: 'center' } : {}}>
         <h2 className="section-title">Safari Experiences</h2>
       </div>

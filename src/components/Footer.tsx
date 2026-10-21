@@ -91,7 +91,7 @@ export default function Footer() {
               <a href="/#contact">Bookings &amp; Inquiries</a>
               <a href="https://wa.me/94727176663" target="_blank" rel="noopener noreferrer">WhatsApp</a>
               <a href="https://maps.google.com/?q=Yala+National+Park,+Sri+Lanka" target="_blank" rel="noopener noreferrer">Location</a>
-              <a href="mailto:info@yaladiary.com">Email</a>
+              <a href="mailto:theyaladiary@gmail.com">Email</a>
             </div>
           </div>
 

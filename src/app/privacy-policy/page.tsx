@@ -225,7 +225,7 @@ export default function PrivacyPolicyPage() {
               <div className="legal-contact-card">
                 <div className="legal-contact-row">
                   <span>📧</span>
-                  <a href="mailto:info@yaladiary.com">info@yaladiary.com</a>
+                  <a href="mailto:theyaladiary@gmail.com">theyaladiary@gmail.com</a>
                 </div>
                 <div className="legal-contact-row">
                   <span>📱</span>
