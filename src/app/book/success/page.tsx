@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Check, XCircle } from 'lucide-react';
 import { stripe } from '@/lib/stripe';
+import GoogleConversionTracker from '@/components/analytics/GoogleConversionTracker';
 
 export default async function BookingSuccessPage({
   searchParams,
@@ -11,6 +12,8 @@ export default async function BookingSuccessPage({
   let isSuccess = false;
   let errorMsg = null;
   let sessionId = null;
+  let amountTotal = 0;
+  let currency = 'USD';
 
   const resolvedSearchParams = await searchParams;
   sessionId = resolvedSearchParams.session_id;
@@ -20,11 +23,14 @@ export default async function BookingSuccessPage({
     if (sessionId) {
       if (sessionId.startsWith('mock_session_')) {
         isSuccess = true;
+        amountTotal = 150;
       } else {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         
         if (session.payment_status === 'paid') {
           isSuccess = true;
+          amountTotal = (session.amount_total || 0) / 100;
+          currency = (session.currency || 'USD').toUpperCase();
           // In production, the database fulfillment, SiteMinder sync, 
           // and email sending is entirely handled securely by the Stripe Webhook.
           // We only verify the status here for the UI.
@@ -45,6 +51,11 @@ export default async function BookingSuccessPage({
       <div className="booking-panel" style={{ textAlign: 'center', padding: '60px 20px', maxWidth: 600 }}>
         {isSuccess ? (
           <>
+            <GoogleConversionTracker
+              transactionId={sessionId || "confirmed"}
+              value={amountTotal}
+              currency={currency}
+            />
             <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(154, 205, 50, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
               <Check size={40} color="var(--primary)" />
             </div>
